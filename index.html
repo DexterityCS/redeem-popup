@@ -233,7 +233,7 @@
       <div class="color-grid">
         <div class="cpick-row"><span class="cpick-label">Accent</span><input type="color" class="cpick" id="cp-accent" value="#9147ff" oninput="onColorChange('clrAccent',this.value);syncAccentLight(this.value);" onchange="save()"></div>
         <div class="cpick-row"><span class="cpick-label">Accent highlight</span><input type="color" class="cpick" id="cp-accentlight" value="#bf94ff" oninput="onColorChange('clrAccentLight',this.value)" onchange="save()"></div>
-        <div class="cpick-row"><span class="cpick-label">Card background</span><input type="color" class="cpick" id="cp-cardbg" value="#0e0c14" oninput="onColorChange('clrCardBg',this.value)" onchange="save()"></div>
+        <div class="cpick-row"><span class="cpick-label">Card background</span><input type="color" class="cpick" id="cp-cardbg" value="#000000" oninput="onColorChange('clrCardBg',this.value)" onchange="save()"></div>
         <div class="cpick-row"><span class="cpick-label">Card border</span><input type="color" class="cpick" id="cp-cardborder" value="#9147ff" oninput="onColorChange('clrCardBorder',this.value)" onchange="save()"></div>
         <div class="cpick-row"><span class="cpick-label">Title text</span><input type="color" class="cpick" id="cp-title" value="#ffffff" oninput="onColorChange('clrTitle',this.value)" onchange="save()"></div>
         <div class="cpick-row"><span class="cpick-label">"Redeemed" label</span><input type="color" class="cpick" id="cp-subtext" value="#aaaaaa" oninput="onColorChange('clrSubtext',this.value)" onchange="save()"></div>
@@ -338,7 +338,7 @@ const state = {
   // granular colors
   clrAccent:     '#9147ff',  // icon bg, badge, border glow, progress bar, avatar border
   clrAccentLight:'#bf94ff',  // username, count, badge text
-  clrCardBg:     '#0e0c14',  // popup background (solid, no transparency)
+  clrCardBg:     'transparent',  // popup background
   clrCardBorder: '#9147ff',  // popup border
   clrTitle:      '#ffffff',  // reward title text
   clrSubtext:    '#aaaaaa',  // "redeemed" label
@@ -420,7 +420,7 @@ function syncAccentLight(hex) {
 function resetColors() {
   const defaults = {
     clrAccent:'#9147ff', clrAccentLight:'#bf94ff',
-    clrCardBg:'#0e0c14', clrCardBorder:'#9147ff',
+    clrCardBg:'transparent', clrCardBorder:'#9147ff',
     clrTitle:'#ffffff', clrSubtext:'#aaaaaa',
     clrMsgBar:'#9147ff', clrProgressBg:'#9147ff',
   };
@@ -639,7 +639,7 @@ function playSound(){try{const ctx=_actxGet();[523.25,659.25,783.99].forEach((f,
 html,body{background:transparent!important;overflow:hidden;font-family:'Inter','Segoe UI',sans-serif;width:100vw;height:100vh;}
 body{display:flex;${bodyPos};padding:24px;}
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-#popup{position:relative;width:380px;background:\${cbg};border:1px solid \${cR(cbr,0.6)};border-radius:16px;padding:20px 22px 18px;box-shadow:0 0 0 1px \${cR(cbr,0.15)},inset 0 1px 0 rgba(255,255,255,0.06);opacity:0;transform:translateX(40px) scale(0.96);pointer-events:none;}
+#popup{position:relative;width:380px;background:transparent;border:2px solid \${cbr};border-radius:16px;padding:20px 22px 18px;opacity:0;transform:translateX(40px) scale(0.96);pointer-events:none;}
 #popup.show{animation:si 0.45s cubic-bezier(0.22,1,0.36,1) forwards;}
 #popup.hide{animation:so 0.35s cubic-bezier(0.4,0,1,1) forwards;}
 @keyframes si{0%{opacity:0;transform:translateX(40px) scale(0.95)}100%{opacity:1;transform:translateX(0) scale(1)}}
@@ -661,7 +661,7 @@ body{display:flex;${bodyPos};padding:24px;}
 .ur{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
 .av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,\${c},#18181b);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;border:1.5px solid \${cR(c,0.5)};overflow:hidden;}
 .un{font-size:13px;font-weight:600;color:\${cl};}
-.rl{font-size:13px;color:\${csub};}
+.rl{font-size:13px;color:\${csub || 'rgba(255,255,255,0.6)'};}
 .um{font-size:13.5px;color:rgba(255,255,255,0.75);line-height:1.55;background:rgba(255,255,255,0.04);border-left:2.5px solid \${cR(cmsg,0.7)};border-radius:0 8px 8px 0;padding:8px 12px;margin-top:6px;word-break:break-word;}
 @keyframes pr{0%,100%{box-shadow:0 0 0 4px \${cR(c,0.18)}}50%{box-shadow:0 0 0 8px \${cR(c,0.06)}}}
 #popup.show .ci{animation:pr 2s ease-in-out infinite;}
