@@ -23,7 +23,7 @@
   #wheel-wrap.visible { display:flex; }
   #wheel-wrap:active { cursor:grabbing; }
   .wheel-outer { position:relative; width:420px; height:420px; }
-  #wheel-canvas { width:420px; height:420px; border-radius:50%; display:block; }
+  #wheel-canvas { width:420px; height:420px; border-radius:50%; display:block; background:transparent; }
   .wheel-pointer {
     position:absolute; top:-18px; left:50%; transform:translateX(-50%);
     width:0; height:0; border-left:14px solid transparent;
@@ -235,7 +235,9 @@ function doSpin(redeemerName){
   spinning=true;
   const wrap=document.getElementById('wheel-wrap');
   wrap.classList.add('visible');
-  requestAnimationFrame(()=>drawWheel(currentAngle));
+  // Force layout then redraw so canvas has real dimensions
+  wrap.getBoundingClientRect();
+  drawWheel(currentAngle);
 
   const slices=buildSlices(),n=slices.length,arc=(2*Math.PI)/n;
   const winIdx=Math.floor(Math.random()*n),winner=slices[winIdx];
@@ -468,6 +470,7 @@ document.getElementById('cfg-cancel-btn').addEventListener('click',()=>{cfg=load
 const params=new URLSearchParams(window.location.search);
 if(params.get('config')==='1')openConfig();
 
+// Pre-render canvas (even while hidden, so it's ready when shown)
 drawWheel(currentAngle);
 if(cfg.clientId&&cfg.oauthToken)connectTwitchAndValidate();
 </script>
