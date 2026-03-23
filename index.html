@@ -634,24 +634,24 @@ function playSound(){try{const ctx=_actxGet();[523.25,659.25,783.99].forEach((f,
 
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>Twitch Redemption Overlay</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{background:transparent!important;overflow:hidden;font-family:'Inter','Segoe UI',sans-serif;width:100vw;height:100vh;}
-body{display:flex;${bodyPos};padding:24px;}
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-#popup{position:relative;width:380px;background:transparent;border:2px solid \${cbr};border-radius:16px;padding:20px 22px 18px;opacity:0;transform:translateX(40px) scale(0.96);pointer-events:none;}
+*{margin:0;padding:0;box-sizing:border-box;background:transparent;}
+html{background-color:transparent!important;}
+body{background-color:transparent!important;overflow:hidden;font-family:'Inter','Segoe UI',sans-serif;width:100vw;height:100vh;display:flex;${bodyPos};padding:24px;}
+#popup{position:relative;width:380px;background-color:\${cbg === 'transparent' ? 'transparent' : cbg};border:2px solid \${cbr};border-radius:16px;padding:20px 22px 18px;opacity:0;transform:translateX(40px) scale(0.96);pointer-events:none;}
 #popup.show{animation:si 0.45s cubic-bezier(0.22,1,0.36,1) forwards;}
 #popup.hide{animation:so 0.35s cubic-bezier(0.4,0,1,1) forwards;}
 @keyframes si{0%{opacity:0;transform:translateX(40px) scale(0.95)}100%{opacity:1;transform:translateX(0) scale(1)}}
 @keyframes so{0%{opacity:1;transform:translateX(0) scale(1)}100%{opacity:0;transform:translateX(40px) scale(0.95)}}
-#pb{position:absolute;bottom:0;left:0;height:3px;width:100%;border-radius:0 0 16px 16px;overflow:hidden;background:rgba(255,255,255,0.06);}
+#pb{position:absolute;bottom:0;left:0;height:3px;width:100%;border-radius:0 0 16px 16px;overflow:hidden;}
 #pf{height:100%;width:100%;background:linear-gradient(90deg,\${cprog},\${cl});transform-origin:left;transform:scaleX(1);}
 .tr{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
 .ci{flex-shrink:0;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,\${c},\${cl});display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px \${cR(c,0.18)};}
 .ci svg{width:20px;height:20px;}
-.badge{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:\${cl};background:\${cR(c,0.18)};border:1px solid \${cR(c,0.3)};border-radius:6px;padding:3px 8px;white-space:nowrap;}
+.badge{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:\${cl};background:transparent;border:1px solid \${cR(c,0.6)};border-radius:6px;padding:3px 8px;white-space:nowrap;}
 .sp{flex:1;}
-.xb{width:22px;height:22px;background:rgba(255,255,255,0.06);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;color:rgba(255,255,255,0.35);font-size:13px;}
+.xb{width:22px;height:22px;background:transparent;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;color:rgba(255,255,255,0.35);font-size:13px;}
 .nr{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}
 .rn{font-size:17px;font-weight:700;color:\${ctitle};letter-spacing:-.01em;line-height:1.25;word-break:break-word;flex:1;}
 .rc{font-size:11px;font-weight:600;color:\${cR(cl,0.8)};white-space:nowrap;flex-shrink:0;}
@@ -662,7 +662,7 @@ body{display:flex;${bodyPos};padding:24px;}
 .av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,\${c},#18181b);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;border:1.5px solid \${cR(c,0.5)};overflow:hidden;}
 .un{font-size:13px;font-weight:600;color:\${cl};}
 .rl{font-size:13px;color:\${csub || 'rgba(255,255,255,0.6)'};}
-.um{font-size:13.5px;color:rgba(255,255,255,0.75);line-height:1.55;background:rgba(255,255,255,0.04);border-left:2.5px solid \${cR(cmsg,0.7)};border-radius:0 8px 8px 0;padding:8px 12px;margin-top:6px;word-break:break-word;}
+.um{font-size:13.5px;color:rgba(255,255,255,0.75);line-height:1.55;background:transparent;border-left:2.5px solid \${cR(cmsg,0.7)};border-radius:0 8px 8px 0;padding:8px 12px;margin-top:6px;word-break:break-word;}
 @keyframes pr{0%,100%{box-shadow:0 0 0 4px \${cR(c,0.18)}}50%{box-shadow:0 0 0 8px \${cR(c,0.06)}}}
 #popup.show .ci{animation:pr 2s ease-in-out infinite;}
 </style></head><body>
