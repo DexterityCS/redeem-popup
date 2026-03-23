@@ -1,725 +1,1230 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Redemption Overlay — Setup</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CS2 Challenge Wheel</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --purple: #9147ff; --purple-light: #bf94ff;
-    --purple-dim: rgba(145,71,255,0.15); --purple-border: rgba(145,71,255,0.35);
-    --bg: #0e0c14; --bg2: #16131f; --bg3: #1e1a2e;
-    --text: #f0eeff; --text2: rgba(240,238,255,0.55); --text3: rgba(240,238,255,0.3);
-    --border: rgba(255,255,255,0.08);
-    --green: #00c97a; --green-dim: rgba(0,201,122,0.12);
-    --red: #ff4d6a; --radius: 12px;
-  }
-  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:40px 24px 80px; }
-  .page { max-width:680px; margin:0 auto; }
+/* ============================================================
+   CONFIGURATION — edit these to customize the wheel
+   ============================================================ */
+:root {
+  --wheel-size: 500px;        /* diameter of the wheel */
+  --accent: #e8b84b;          /* CS2 bomb yellow */
+  --accent2: #4b9fe8;         /* CT blue */
+  --danger: #e84b4b;          /* T red */
+  --bg-dark: #0a0c0a;         /* near-black tactical */
+  --bg-panel: rgba(8,12,8,0.92);
+  --border: rgba(232,184,75,0.35);
+  --text-dim: rgba(200,210,195,0.5);
+}
+/* ============================================================ */
 
-  .header { display:flex; align-items:center; gap:14px; margin-bottom:36px; }
-  .logo { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,#9147ff,#bf94ff); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .logo svg { width:24px; height:24px; }
-  .header-text h1 { font-size:20px; font-weight:700; }
-  .header-text p { font-size:13px; color:var(--text2); margin-top:2px; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .step { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px; overflow:hidden; }
-  .step-header { display:flex; align-items:center; gap:14px; padding:18px 20px; cursor:pointer; user-select:none; }
-  .step-header:hover { background:rgba(255,255,255,0.02); }
-  .step-num { width:28px; height:28px; border-radius:50%; background:var(--purple-dim); border:1px solid var(--purple-border); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:var(--purple-light); flex-shrink:0; transition:all 0.2s; }
-  .step-num.done { background:rgba(0,201,122,0.15); border-color:rgba(0,201,122,0.4); color:var(--green); }
-  .step-title { font-size:15px; font-weight:600; flex:1; }
-  .step-subtitle { font-size:12px; color:var(--text3); margin-top:2px; }
-  .chevron { color:var(--text3); font-size:11px; transition:transform 0.2s; flex-shrink:0; }
-  .step.open .chevron { transform:rotate(180deg); }
-  .step-body { display:none; padding:0 20px 20px; border-top:1px solid var(--border); }
-  .step.open .step-body { display:block; }
+html, body {
+  width: 100%; height: 100%;
+  background: transparent !important;
+  overflow: hidden;
+  font-family: 'Barlow Condensed', sans-serif;
+}
 
-  label { display:block; font-size:12px; font-weight:600; color:var(--text2); margin:16px 0 6px; letter-spacing:0.03em; }
-  input[type=text], input[type=number], select {
-    width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:8px;
-    padding:10px 14px; color:var(--text); font-size:14px; font-family:'Inter',sans-serif; outline:none; transition:border-color 0.15s;
-  }
-  input:focus, select:focus { border-color:var(--purple-border); }
-  select option { background:var(--bg3); }
-  .input-row { display:flex; gap:10px; }
-  .input-row > * { flex:1; }
+#scene {
+  width: 100vw; height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px;
+  position: relative;
+  background: transparent;
+}
 
-  .toggle-row { display:flex; align-items:center; justify-content:space-between; margin-top:16px; }
-  .toggle-label { font-size:13px; color:var(--text2); }
-  .toggle-wrap { position:relative; width:40px; height:22px; }
-  .toggle-wrap input { opacity:0; width:0; height:0; position:absolute; }
-  .toggle-track { position:absolute; inset:0; background:var(--bg3); border:1px solid var(--border); border-radius:11px; cursor:pointer; transition:background 0.2s; }
-  .toggle-wrap input:checked ~ .toggle-track { background:var(--purple); border-color:var(--purple); }
-  .toggle-knob { position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform 0.2s; pointer-events:none; }
-  .toggle-wrap input:checked ~ .toggle-track ~ .toggle-knob { transform:translateX(18px); }
 
-  .info-box { background:var(--purple-dim); border:1px solid var(--purple-border); border-radius:8px; padding:12px 14px; font-size:13px; color:var(--text2); line-height:1.6; margin-top:14px; }
-  .info-box strong { color:var(--text); }
-  .info-box.success { background:var(--green-dim); border-color:rgba(0,201,122,0.3); }
-  .info-box.warning { background:rgba(255,180,0,0.08); border-color:rgba(255,180,0,0.25); }
-  .info-box code { background:rgba(255,255,255,0.08); padding:1px 5px; border-radius:4px; font-family:monospace; font-size:12px; }
 
-  .code-block { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:14px; font-family:'Courier New',monospace; font-size:12px; color:#bf94ff; line-height:1.7; margin-top:12px; white-space:pre-wrap; word-break:break-all; position:relative; }
-  .copy-btn { position:absolute; top:8px; right:8px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:11px; color:var(--text2); cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; }
-  .copy-btn:hover { border-color:var(--purple-border); color:var(--text); }
-  .copy-btn.copied { color:var(--green); border-color:rgba(0,201,122,0.4); }
+/* ---- Wheel ---- */
+#wheel-container {
+  position: relative;
+  width: var(--wheel-size);
+  height: var(--wheel-size);
+  flex-shrink: 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+#wheel-container.visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: all;
+}
+#wheel-container.hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
 
-  .primary-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px; background:var(--purple); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; margin-top:16px; transition:background 0.15s,transform 0.1s; font-family:'Inter',sans-serif; }
-  .primary-btn:hover { background:#a259ff; }
-  .primary-btn:active { transform:scale(0.98); }
-  .primary-btn:disabled { opacity:0.4; cursor:not-allowed; }
-  .secondary-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:12px; background:transparent; color:var(--text2); border:1px solid var(--border); border-radius:10px; font-size:14px; font-weight:500; cursor:pointer; margin-top:10px; transition:all 0.15s; font-family:'Inter',sans-serif; }
-  .secondary-btn:hover { border-color:var(--purple-border); color:var(--text); }
+#wheel-canvas {
+  border-radius: 50%;
+  display: block;
+  width: 100%; height: 100%;
+  filter: drop-shadow(0 0 20px rgba(232,184,75,0.3));
+  transition: filter 0.4s;
+}
+#wheel-canvas.spinning {
+  filter: drop-shadow(0 0 40px rgba(232,184,75,0.7));
+}
 
-  /* Twitch login button */
-  .twitch-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:14px; background:#9147ff; color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:16px; transition:background 0.15s; font-family:'Inter',sans-serif; letter-spacing:0.01em; }
-  .twitch-btn:hover { background:#a259ff; }
-  .twitch-btn svg { width:22px; height:22px; flex-shrink:0; }
+/* Outer ring — segmented tactical look */
+#wheel-ring {
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(232,184,75,0.45);
+  pointer-events: none;
+}
+#wheel-ring::before {
+  content: '';
+  position: absolute; inset: 4px;
+  border-radius: 50%;
+  border: 1px solid rgba(232,184,75,0.15);
+}
 
-  /* connected user card */
-  .user-card { display:flex; align-items:center; gap:12px; background:var(--bg3); border:1px solid rgba(0,201,122,0.25); border-radius:10px; padding:14px 16px; margin-top:14px; }
-  .user-avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#9147ff,#18181b); overflow:hidden; flex-shrink:0; }
-  .user-avatar img { width:100%; height:100%; object-fit:cover; }
-  .user-info .name { font-size:15px; font-weight:700; }
-  .user-info .tag { font-size:12px; color:var(--green); margin-top:2px; }
-  .user-disconnect { margin-left:auto; font-size:12px; color:var(--text3); cursor:pointer; border:none; background:none; color:var(--text3); font-family:'Inter',sans-serif; text-decoration:underline; padding:4px; }
-  .user-disconnect:hover { color:var(--red); }
+/* Center hub — bomb detonator style */
+#spin-hub {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  background: #0a0c0a;
+  border: 2px solid var(--accent);
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  transition: background 0.15s, transform 0.1s;
+  z-index: 10;
+}
+#spin-hub::before {
+  content: '';
+  position: absolute; inset: 4px;
+  border-radius: 50%;
+  border: 1px solid rgba(232,184,75,0.25);
+}
+#spin-hub:hover { background: #141a10; transform: translate(-50%,-50%) scale(1.07); }
+#spin-hub:active { transform: translate(-50%,-50%) scale(0.96); }
+#spin-hub.disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+#hub-label { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 900; letter-spacing: 2px; color: var(--accent); line-height: 1; position: relative; z-index: 1; }
+#hub-sub { font-family: 'Share Tech Mono', monospace; font-size: 8px; color: rgba(232,184,75,0.45); letter-spacing: 0.1em; position: relative; z-index: 1; }
 
-  /* color swatches */
-  .color-row { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
-  .swatch { width:32px; height:32px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:border-color 0.15s,transform 0.1s; }
-  .swatch:hover { transform:scale(1.1); }
-  .swatch.active { border-color:#fff; }
+/* Pointer — angular tactical arrow */
+#pointer {
+  position: absolute;
+  right: -26px; top: 50%;
+  transform: translateY(-50%);
+  width: 0; height: 0;
+  border-top: 14px solid transparent;
+  border-bottom: 14px solid transparent;
+  border-right: 26px solid var(--accent);
+  filter: drop-shadow(0 0 8px rgba(232,184,75,0.8));
+}
 
-  /* color pickers grid */
-  .color-grid { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
-  .cpick-row { display:flex; align-items:center; justify-content:space-between; background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:8px 12px; }
-  .cpick-label { font-size:13px; color:var(--text2); }
-  .cpick { width:48px; height:28px; border:none; border-radius:6px; cursor:pointer; padding:0; background:none; }
-  .cpick::-webkit-color-swatch-wrapper { padding:0; }
-  .cpick::-webkit-color-swatch { border:none; border-radius:4px; }
+/* ---- Status bar — HUD style ---- */
+#status-bar {
+  display: none !important;
+  position: absolute;
+  top: 16px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 5px 14px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+#status-bar::before {
+  content: '//';
+  color: var(--accent);
+  font-size: 10px;
+}
+.s-dot { width: 7px; height: 7px; border-radius: 50%; background: #333; flex-shrink: 0; }
+.s-dot.live { background: #5dca5d; box-shadow: 0 0 6px #5dca5d; }
+.s-dot.err  { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
 
-  /* position grid */
-  .position-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; }
-  .pos-btn { aspect-ratio:1; border:1px solid var(--border); border-radius:8px; background:var(--bg3); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; transition:all 0.15s; }
-  .pos-btn:hover { border-color:var(--purple-border); }
-  .pos-btn.active { border-color:var(--purple); background:var(--purple-dim); }
+/* ---- Queue pill ---- */
+#queue-pill {
+  position: absolute;
+  bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 5px 16px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  display: none;
+}
+#queue-pill.show { display: block; }
+#queue-pill span { color: var(--accent); }
 
-  /* range */
-  .range-row { display:flex; align-items:center; gap:12px; margin-top:8px; }
-  .range-row input[type=range] { flex:1; }
-  .range-val { font-size:13px; font-weight:600; color:var(--purple-light); min-width:36px; text-align:right; }
+/* ---- Result overlay — bomb detonation card ---- */
+#result-overlay {
+  display: flex;
+  align-items: center; justify-content: center;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s, visibility 0.3s;
+  width: 100%;
+}
+#result-overlay.show {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: all;
+}
 
-  /* preview */
-  .preview-wrap { background:linear-gradient(135deg,#1a1040,#0e0c14); border:1px solid var(--border); border-radius:10px; padding:20px; margin-top:14px; display:flex; justify-content:flex-end; min-height:120px; align-items:center; }
-  .mini-popup { width:260px; background:rgba(14,12,20,0.95); border:1px solid rgba(145,71,255,0.5); border-radius:12px; padding:12px 14px 10px; }
-  .mini-top { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-  .mini-coin { width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#9147ff,#bf94ff); flex-shrink:0; }
-  .mini-badge { font-size:9px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#bf94ff; background:rgba(145,71,255,0.2); border:1px solid rgba(145,71,255,0.35); border-radius:4px; padding:2px 6px; }
-  .mini-title { font-size:12px; font-weight:700; color:#fff; margin-bottom:3px; }
-  .mini-user { font-size:11px; color:#bf94ff; }
-  .mini-bar { height:2px; background:linear-gradient(90deg,#9147ff,#bf94ff); border-radius:0 0 12px 12px; margin:8px -14px -10px; }
+#result-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 0;
+  text-align: center;
+  width: 100%;
+  position: relative;
+  transform: scale(0.92);
+  transition: transform 0.3s cubic-bezier(0.34,1.46,0.64,1);
+  overflow: hidden;
+}
+#result-overlay.show #result-card { transform: scale(1); }
 
-  .divider { height:1px; background:var(--border); margin:16px 0; }
+/* Top bar on result card */
+#result-card::before {
+  content: '✷  CHALLENGE SELECTED  ✷';
+  display: block;
+  background: var(--accent);
+  color: #0a0c0a;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  padding: 6px 0;
+  text-align: center;
+}
 
-  /* download card */
-  .download-card { background:linear-gradient(135deg,rgba(145,71,255,0.12),rgba(145,71,255,0.04)); border:1px solid var(--purple-border); border-radius:var(--radius); padding:24px; margin-top:24px; }
-  .download-card h3 { font-size:16px; font-weight:700; margin-bottom:6px; }
-  .download-card p { font-size:13px; color:var(--text2); line-height:1.6; margin-bottom:16px; }
+#result-card-inner { padding: 24px 40px 28px; }
 
-  @keyframes pulse-card {
-    0%,100% { box-shadow: 0 0 0 0 rgba(145,71,255,0); }
-    50% { box-shadow: 0 0 0 8px rgba(145,71,255,0.35); }
-  }
-  .download-card.pulse { animation: pulse-card 0.9s ease-in-out 2; }
+#res-user {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px; color: var(--accent2);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+#res-user::before { content: '> '; color: var(--accent); }
 
-  #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px 20px; font-size:13px; color:var(--text); opacity:0; transition:all 0.25s; pointer-events:none; white-space:nowrap; z-index:9999; }
-  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+#res-challenge {
+  font-family: 'Orbitron', monospace;
+  font-size: 26px; font-weight: 900;
+  letter-spacing: 1px; line-height: 1.2;
+  color: #fff;
+  margin-bottom: 8px;
+  word-break: break-word;
+  text-transform: uppercase;
+}
 
-  .status-row { display:flex; align-items:center; gap:8px; margin-top:12px; font-size:13px; }
-  .status-dot { width:8px; height:8px; border-radius:50%; background:var(--text3); flex-shrink:0; transition:background 0.3s; }
-  .status-dot.connected { background:var(--green); box-shadow:0 0 6px rgba(0,201,122,0.5); }
-  .status-dot.error { background:var(--red); }
-  .status-text { color:var(--text2); }
+#res-tagline {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; color: var(--text-dim);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+#res-close {
+  padding: 8px 28px; font-size: 11px; font-weight: 700;
+  font-family: 'Orbitron', monospace; letter-spacing: 2px;
+  background: transparent; border: 1px solid var(--accent);
+  border-radius: 2px; color: var(--accent);
+  cursor: pointer; text-transform: uppercase;
+  transition: background 0.15s;
+}
+#res-close:hover { background: rgba(232,184,75,0.12); }
+
+/* Flash animation on win */
+@keyframes cs-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+#result-overlay.show #result-card { animation: cs-flash 0.15s ease 2; }
+
+/* Confetti — square fragments instead of dots */
+.confetti-dot {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 1px;
+  animation: confetti-fall 1.6s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes confetti-fall {
+  0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translateY(90px) rotate(360deg) scale(0.1); opacity: 0; }
+}
+
+/* ---- Config panel ---- */
+#config-panel {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(5,8,5,0.98);
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 32px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+#config-panel.open { display: block; }
+#config-panel h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: 24px; font-weight: 900;
+  color: var(--accent); letter-spacing: 4px;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+#config-panel p.sub { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text-dim); margin-bottom: 24px; letter-spacing: 0.05em; }
+.cfg-section { margin-bottom: 24px; }
+.cfg-section h2 {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.15em;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+.cfg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.cfg-row label { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text-dim); width: 150px; flex-shrink: 0; letter-spacing: 0.06em; }
+.cfg-row input[type=text], .cfg-row input[type=number] {
+  flex: 1; padding: 7px 10px; font-size: 13px; font-family: 'Share Tech Mono', monospace;
+  background: rgba(232,184,75,0.04); border: 1px solid var(--border);
+  border-radius: 2px; color: #d4e8c8; outline: none; letter-spacing: 0.05em;
+}
+.cfg-row input:focus { border-color: var(--accent); }
+.cfg-row input[type=color] { width: 36px; height: 30px; padding: 2px; border-radius: 2px; border: 1px solid var(--border); background: transparent; cursor: pointer; }
+
+#items-cfg { display: flex; flex-direction: column; gap: 6px; }
+.cfg-item { display: flex; align-items: center; gap: 8px; }
+.cfg-item input[type=text] { flex: 1; padding: 6px 9px; font-size: 13px; font-family: 'Barlow Condensed', sans-serif; background: rgba(232,184,75,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 2px; color: #d4e8c8; outline: none; }
+.cfg-item input[type=color] { width: 32px; height: 28px; padding: 2px; border-radius: 2px; border: none; background: transparent; cursor: pointer; }
+.cfg-item input[type=number] { width: 52px; padding: 6px 6px; font-size: 13px; font-family: 'Share Tech Mono', monospace; background: rgba(232,184,75,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 2px; color: #d4e8c8; outline: none; text-align: center; }
+.cfg-item button { padding: 5px 10px; background: rgba(232,75,75,0.1); border: 1px solid rgba(232,75,75,0.3); border-radius: 2px; color: #e88888; font-size: 12px; cursor: pointer; font-family: 'Share Tech Mono', monospace; }
+.cfg-item button:hover { background: rgba(232,75,75,0.25); }
+
+#cfg-add-item { margin-top: 8px; padding: 7px 18px; font-size: 12px; font-weight: 700; background: transparent; border: 1px solid var(--border); border-radius: 2px; color: var(--accent); cursor: pointer; font-family: 'Share Tech Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; }
+#cfg-add-item:hover { background: rgba(232,184,75,0.08); }
+
+#cfg-save { padding: 10px 32px; font-size: 12px; font-weight: 900; font-family: 'Orbitron', monospace; letter-spacing: 3px; background: var(--accent); color: #0a0c0a; border: none; border-radius: 2px; cursor: pointer; margin-right: 10px; text-transform: uppercase; }
+#cfg-save:hover { background: #f5cc6a; }
+#cfg-cancel { padding: 10px 20px; font-size: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15); border-radius: 2px; color: var(--text-dim); cursor: pointer; font-family: 'Share Tech Mono', monospace; }
+#cfg-cancel:hover { border-color: rgba(255,255,255,0.3); }
+
+#cfg-status { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: #5dca5d; margin-top: 10px; display: none; letter-spacing: 0.1em; }
+#cfg-status::before { content: '// '; }
 </style>
 </head>
 <body>
-<div class="page">
 
-  <div class="header">
-    <div class="logo">
-      <svg viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" fill="rgba(255,255,255,0.15)"/>
-        <path d="M12 6.5C9.52 6.5 7.5 8.52 7.5 11C7.5 13.48 9.52 15.5 12 15.5C14.48 15.5 16.5 13.48 16.5 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-        <circle cx="16.5" cy="11" r="1" fill="white"/>
-        <path d="M12 15.5V18" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-        <path d="M9.5 18H14.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <div class="header-text">
-      <h1>Redemption Overlay — Setup</h1>
-      <p>Connect your Twitch account, customise the look, download and go</p>
+<!-- ============================================================
+     EASY CONFIG — Edit the JS block below to set your defaults
+     Or open this file with ?config=1 in the URL for a GUI
+     ============================================================ -->
+
+<div id="scene">
+
+  </div>
+
+  <div id="result-overlay">
+    <div id="result-card">
+      <div id="result-card-inner">
+        <div id="res-user"></div>
+        <div id="res-challenge"></div>
+        <div id="res-tagline">Execute this challenge</div>
+        <button id="res-close" onclick="closeResult()">Confirm [ESC]</button>
+      </div>
+      <div id="conf-container"></div>
     </div>
   </div>
 
-  <!-- STEP 1: Twitch login -->
-  <div class="step open" id="step1">
-    <div class="step-header" onclick="toggleStep('step1')">
-      <div class="step-num" id="step1-num">1</div>
-      <div>
-        <div class="step-title">Connect Twitch Account</div>
-        <div class="step-subtitle">Log in so the overlay can listen for your channel point redemptions</div>
-      </div>
-      <span class="chevron">▼</span>
-    </div>
-    <div class="step-body">
-
-      <!-- Not logged in -->
-      <div id="login-section">
-        <div class="info-box">
-          Clicking the button below opens Twitch's official login page. The overlay only requests <strong>read</strong> permission for channel point redemptions — it cannot modify anything on your channel.
-        </div>
-
-        <div class="info-box warning" style="margin-top:10px">
-          <strong>One-time setup required:</strong> You need a free Twitch app Client ID. 
-          <a href="https://dev.twitch.tv/console/apps/create" target="_blank" style="color:#bf94ff">Register one here</a> 
-          (set OAuth redirect to <code id="redirect-display"></code>), then paste it below.
-        </div>
-
-        <label>Twitch App Client ID</label>
-        <input type="text" id="client-id-input" placeholder="e.g. abc123xyz456..." value="">
-
-        <button class="twitch-btn" onclick="loginWithTwitch()">
-          <svg viewBox="0 0 24 24" fill="white"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
-          Connect with Twitch
-        </button>
-      </div>
-
-      <!-- Logged in -->
-      <div id="loggedin-section" style="display:none">
-        <div class="user-card">
-          <div class="user-avatar"><img id="user-avatar-img" src="" alt=""></div>
-          <div class="user-info">
-            <div class="name" id="user-display-name">—</div>
-            <div class="tag">✓ Connected — listening for redemptions</div>
-          </div>
-          <button class="user-disconnect" onclick="disconnect()">Disconnect</button>
-        </div>
-        <div class="status-row">
-          <div class="status-dot connected" id="eventsub-dot"></div>
-          <span class="status-text" id="eventsub-text">EventSub WebSocket ready</span>
-        </div>
-      </div>
-
+  <div id="wheel-container">
+    <canvas id="wheel-canvas" width="600" height="600"></canvas>
+    <div id="wheel-ring"></div>
+    <div id="pointer"></div>
+    <div id="spin-hub" onclick="manualSpin()">
+      <span id="hub-label">SPIN</span>
+      <span id="hub-sub">click</span>
     </div>
   </div>
 
-  <!-- STEP 2: Appearance -->
-  <div class="step" id="step2">
-    <div class="step-header" onclick="toggleStep('step2')">
-      <div class="step-num" id="step2-num">2</div>
-      <div>
-        <div class="step-title">Appearance</div>
-        <div class="step-subtitle">Customise colours, position and timing</div>
-      </div>
-      <span class="chevron">▼</span>
-    </div>
-    <div class="step-body">
-
-      <label>Colours</label>
-      <div class="color-grid">
-        <div class="cpick-row"><span class="cpick-label">Accent</span><input type="color" class="cpick" id="cp-accent" value="#9147ff" oninput="onColorChange('clrAccent',this.value);syncAccentLight(this.value);" onchange="save()"></div>
-        <div class="cpick-row"><span class="cpick-label">Accent highlight</span><input type="color" class="cpick" id="cp-accentlight" value="#bf94ff" oninput="onColorChange('clrAccentLight',this.value)" onchange="save()"></div>
-        <div class="cpick-row"><span class="cpick-label">Card background</span><input type="color" class="cpick" id="cp-cardbg" value="#1a1025" oninput="onColorChange('clrCardBg',this.value)" onchange="save()"></div>
-        <div class="cpick-row"><span class="cpick-label">Card border</span><input type="color" class="cpick" id="cp-cardborder" value="#9147ff" oninput="onColorChange('clrCardBorder',this.value)" onchange="save()"></div>
-        <div class="cpick-row"><span class="cpick-label">Title text</span><input type="color" class="cpick" id="cp-title" value="#ffffff" oninput="onColorChange('clrTitle',this.value)" onchange="save()"></div>
-        <div class="cpick-row"><span class="cpick-label">"Redeemed" label</span><input type="color" class="cpick" id="cp-subtext" value="#aaaaaa" oninput="onColorChange('clrSubtext',this.value)" onchange="save()"></div>
-        <div class="cpick-row"><span class="cpick-label">Message bar</span><input type="color" class="cpick" id="cp-msgbar" value="#9147ff" oninput="onColorChange('clrMsgBar',this.value)" onchange="save()"></div>
-        <div class="cpick-row"><span class="cpick-label">Progress bar</span><input type="color" class="cpick" id="cp-progress" value="#9147ff" oninput="onColorChange('clrProgressBg',this.value)" onchange="save()"></div>
-      </div>
-      <button class="secondary-btn" style="margin-top:10px;padding:8px" onclick="resetColors()">↺ Reset to default</button>
-
-      <label>Position on screen</label>
-      <div class="position-grid">
-        <div class="pos-btn" data-pos="top-left"   onclick="selectPos(this)">↖</div>
-        <div class="pos-btn" data-pos="top-center" onclick="selectPos(this)">↑</div>
-        <div class="pos-btn active" data-pos="top-right"  onclick="selectPos(this)">↗</div>
-        <div class="pos-btn" data-pos="mid-left"   onclick="selectPos(this)">←</div>
-        <div class="pos-btn" data-pos="mid-center" onclick="selectPos(this)">·</div>
-        <div class="pos-btn" data-pos="mid-right"  onclick="selectPos(this)">→</div>
-        <div class="pos-btn" data-pos="bot-left"   onclick="selectPos(this)">↙</div>
-        <div class="pos-btn" data-pos="bot-center" onclick="selectPos(this)">↓</div>
-        <div class="pos-btn" data-pos="bot-right"  onclick="selectPos(this)">↘</div>
-      </div>
-
-      <label>Display duration</label>
-      <div class="range-row">
-        <input type="range" min="3" max="15" value="7" id="duration-slider" oninput="document.getElementById('duration-val').textContent=this.value+'s';save();">
-        <span class="range-val" id="duration-val">7s</span>
-      </div>
-
-      <div class="toggle-row">
-        <span class="toggle-label">Play sound effect</span>
-        <label class="toggle-wrap">
-          <input type="checkbox" id="toggle-sound" checked onchange="save()">
-          <div class="toggle-track"></div><div class="toggle-knob"></div>
-        </label>
-      </div>
-
-      <div class="toggle-row">
-        <span class="toggle-label">Show redemption count</span>
-        <label class="toggle-wrap">
-          <input type="checkbox" id="toggle-count" checked onchange="save()">
-          <div class="toggle-track"></div><div class="toggle-knob"></div>
-        </label>
-      </div>
-
-      <label>Preview</label>
-      <div class="preview-wrap">
-        <div class="mini-popup" id="mini-popup">
-          <div class="mini-top">
-            <div class="mini-coin" id="mini-coin"></div>
-            <span class="mini-badge">Channel Points</span>
-          </div>
-          <div class="mini-title">Hydrate the Streamer! <span id="mini-count" style="font-size:10px;font-weight:600;color:#bf94ff">×3</span></div>
-          <div class="mini-user" id="mini-user-line">CoolViewer99 redeemed</div>
-          <div class="mini-bar" id="mini-bar"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 3: OBS -->
-  <div class="step" id="step3">
-    <div class="step-header" onclick="toggleStep('step3')">
-      <div class="step-num" id="step3-num">3</div>
-      <div>
-        <div class="step-title">Add to OBS / Streamlabs</div>
-        <div class="step-subtitle">One browser source, and you're live</div>
-      </div>
-      <span class="chevron">▼</span>
-    </div>
-    <div class="step-body">
-      <div class="info-box">
-        <strong>1.</strong> Download the overlay file below.<br>
-        <strong>2.</strong> In OBS/SLOBS, add a <strong>Browser Source</strong>.<br>
-        <strong>3.</strong> Tick <strong>Local file</strong> and browse to <code>twitch-redemption-overlay.html</code>.<br>
-        <strong>4.</strong> Set width <strong>1920</strong>, height <strong>1080</strong>.<br>
-        <strong>5.</strong> In the <strong>Custom CSS</strong> box, paste: <code>body { background-color: rgba(0,0,0,0) !important; }</code><br>
-        <strong>6.</strong> Tick <strong>Refresh browser when scene becomes active</strong>.
-      </div>
-      <div class="info-box warning" style="margin-top:10px">
-        The overlay file contains your Twitch token. <strong>Keep it private</strong> — don't share the downloaded file with others. Each person should run setup themselves.
-      </div>
-    </div>
-  </div>
-
-  <!-- Download -->
-  <div class="download-card" id="download-card">
-    <h3>Download your overlay</h3>
-    <p>Your Twitch login and appearance settings will be baked into the file. Just add it as a Browser Source in OBS and it will automatically connect to Twitch and listen for redemptions.</p>
-    <button class="primary-btn" id="download-btn" onclick="downloadOverlay()">⬇ Download Overlay</button>
-    <button class="secondary-btn" onclick="previewOverlay()">👁 Open Preview in new tab</button>
-  </div>
-
+  <div id="queue-pill">Queue: <span id="q-count">0</span> waiting</div>
 </div>
-<div id="toast"></div>
+
+<!-- Config Panel -->
+<div id="config-panel">
+  <h1>Wheel Config</h1>
+  <p class="sub">Changes are saved to localStorage and loaded automatically on next open.</p>
+
+  <div class="cfg-section">
+    <h2>Twitch connection</h2>
+    <div class="cfg-row"><label>Client ID</label><input type="text" id="cfg-clientid" placeholder="From dev.twitch.tv/console"/></div>
+    <div class="cfg-row"><label>Channel name</label><input type="text" id="cfg-channel" placeholder="yourchannelname"/></div>
+    <div class="cfg-row"><label>Channel Points reward name</label><input type="text" id="cfg-reward" placeholder="e.g. Spin the Wheel (must match your reward name exactly)"/></div>
+    <div class="cfg-row" style="gap:10px;">
+      <label>Twitch auth</label>
+      <button id="cfg-auth-btn" onclick="startTwitchAuth()" style="padding:7px 16px;font-size:12px;font-family:'Share Tech Mono',monospace;background:#9146ff;color:#fff;border:none;border-radius:2px;cursor:pointer;letter-spacing:0.05em;">Connect with Twitch</button>
+      <button id="cfg-disconnect-btn" onclick="disconnectTwitch()" style="padding:7px 16px;font-size:12px;font-family:'Share Tech Mono',monospace;background:transparent;color:#e88888;border:1px solid rgba(232,75,75,0.4);border-radius:2px;cursor:pointer;letter-spacing:0.05em;display:none;">Disconnect</button>
+      <span id="cfg-auth-status" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);"></span>
+    </div>
+  </div>
+
+  <div class="cfg-section">
+    <h2>Challenges <span style="font-size:11px;color:rgba(255,255,255,0.3);font-weight:400;">(weight = how likely to land, 1–9)</span></h2>
+    <div id="items-cfg"></div>
+    <button id="cfg-add-item" onclick="cfgAddItem()">+ Add challenge</button>
+  </div>
+
+  <div class="cfg-section">
+    <h2>Sound</h2>
+    <div class="cfg-row"><label>Sound effects</label><input type="text" id="cfg-sound" placeholder="on or off"/></div>
+    <div class="cfg-row">
+      <label>Volume</label>
+      <input type="range" id="cfg-volume" min="0" max="100" step="1" value="70" style="flex:1;" oninput="document.getElementById('cfg-vol-out').textContent=this.value+'%'"/>
+      <span id="cfg-vol-out" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent);min-width:36px;text-align:right;">70%</span>
+    </div>
+  </div>
+
+  <div>
+    <button id="cfg-save" onclick="cfgSave()">Save &amp; apply</button>
+    <button id="cfg-cancel" onclick="cfgClose()">Cancel</button>
+    <button id="cfg-reset" onclick="cfgReset()" style="padding:10px 20px;font-size:12px;background:transparent;border:1px solid rgba(232,75,75,0.4);border-radius:2px;color:#e88888;cursor:pointer;font-family:'Share Tech Mono',monospace;margin-left:8px;">Reset to defaults</button>
+    <div id="cfg-status">Saved!</div>
+  </div>
+</div>
 
 <script>
-// ─────────────────────────────────────────────────────────────
-//  STATE
-// ─────────────────────────────────────────────────────────────
-const state = {
-  // accent (legacy, kept for compat)
-  color: '#9147ff',
-  // granular colors
-  clrAccent:     '#9147ff',  // icon bg, badge, border glow, progress bar, avatar border
-  clrAccentLight:'#bf94ff',  // username, count, badge text
-  clrCardBg:     '#1a1025',  // popup background
-  clrCardBorder: '#9147ff',  // popup border
-  clrTitle:      '#ffffff',  // reward title text
-  clrSubtext:    '#aaaaaa',  // "redeemed" label
-  clrMsgBar:     '#9147ff',  // left bar on user message
-  clrProgressBg: '#9147ff',  // progress bar fill start
-  position: 'top-right',
-  duration: 7, sound: true, showCount: true,
-  clientId: '', accessToken: '', userId: '', userLogin: '',
-  userDisplayName: '', userAvatar: '',
+// ============================================================
+// DEFAULT CONFIG — edit here OR use ?config=1 in the browser
+// ============================================================
+const DEFAULTS = {
+  channel: '',           // your Twitch channel name (lowercase)
+  rewardFilter: '',      // reward title to listen for (blank = any)
+  clientId: '',          // Twitch app Client ID from dev.twitch.tv
+  oauthToken: '',        // auto-filled after connecting with Twitch
+  soundEnabled: true,
+  volume: 0.7,          // 0.0 to 1.0
+  items: [
+    { label: 'One eye closed',   color: '#1a2f4a', weight: 1 },
+    { label: 'Switch mouse hands', color: '#1a4a1a', weight: 1 },
+    { label: 'Sound off',        color: '#1a3a2a', weight: 1 },
+    { label: 'Throw weapons',    color: '#3a2a10', weight: 1 },
+    { label: 'CHARGE!!!!',       color: '#4a1a1a', weight: 1 },
+    { label: 'Forget the W',     color: '#2a1a3a', weight: 1 },
+    { label: 'Only walk',        color: '#4a2a10', weight: 1 },
+    { label: 'Only crouch',      color: '#101a4a', weight: 1 },
+    { label: 'Pick a corner',    color: '#1a4a3a', weight: 1 },
+  ]
 };
+// ============================================================
 
-// Set redirect URI to current page
-const REDIRECT_URI = 'https://dexteritycs.github.io/redeem-popup/';
-document.getElementById('redirect-display').textContent = REDIRECT_URI;
+let cfg = loadCfg();
+let angle = 0;
+let velocity = 0;
+let spinning = false;
+let raf = null;
+let queue = [];
+let ws = null;
+let eventsubSessionId = null;
+let twitchUserId = null;
 
-// Load saved state
-try {
-  const saved = JSON.parse(localStorage.getItem('overlay-config') || '{}');
-  Object.assign(state, saved);
-  applyLoaded();
-} catch(e) {}
-
-// Handle OAuth callback (token is in URL hash)
-(function handleOAuthCallback() {
-  const hash = window.location.hash;
-  if (!hash.includes('access_token')) return;
-  const params = new URLSearchParams(hash.slice(1));
-  const token = params.get('access_token');
-  if (!token) return;
-  state.accessToken = token;
-  // Clean URL
-  history.replaceState(null, '', window.location.pathname);
-  // Fetch user info then auto-download
-  fetchTwitchUser(token, true);
-})();
-
-function applyLoaded() {
-  document.getElementById('client-id-input').value = state.clientId || '';
-  document.getElementById('duration-slider').value = state.duration;
-  document.getElementById('duration-val').textContent = state.duration + 's';
-  document.getElementById('toggle-sound').checked = state.sound;
-  document.getElementById('toggle-count').checked = state.showCount;
-  document.querySelectorAll('.pos-btn').forEach(b => b.classList.toggle('active', b.dataset.pos === state.position));
-  // restore color pickers
-  const picks = {
-    'cp-accent': state.clrAccent, 'cp-accentlight': state.clrAccentLight,
-    'cp-cardbg': state.clrCardBg, 'cp-cardborder': state.clrCardBorder,
-    'cp-title': state.clrTitle, 'cp-subtext': state.clrSubtext,
-    'cp-msgbar': state.clrMsgBar, 'cp-progress': state.clrProgressBg,
-  };
-  Object.entries(picks).forEach(([id, val]) => { const el = document.getElementById(id); if (el && val) el.value = val; });
-  if (state.accessToken && state.userDisplayName) showLoggedIn();
-  updatePreview();
+function loadCfg() {
+  try {
+    const s = localStorage.getItem('wheelCfg');
+    if (s) return Object.assign({}, DEFAULTS, JSON.parse(s));
+  } catch(e) {}
+  return Object.assign({}, DEFAULTS);
 }
 
-function save() {
-  state.duration = parseInt(document.getElementById('duration-slider').value);
-  state.sound = document.getElementById('toggle-sound').checked;
-  state.showCount = document.getElementById('toggle-count').checked;
-  state.clientId = document.getElementById('client-id-input').value.trim();
-  localStorage.setItem('overlay-config', JSON.stringify(state));
-  updatePreview();
+function saveCfg() {
+  localStorage.setItem('wheelCfg', JSON.stringify(cfg));
 }
 
-function onColorChange(key, value) {
-  state[key] = value;
-  // keep legacy state.color in sync with accent
-  if (key === 'clrAccent') state.color = value;
-  updatePreview();
+// ---- Canvas drawing ----
+const cvs = document.getElementById('wheel-canvas');
+const ctx = cvs.getContext('2d');
+const SIZE = 600;
+
+function totalWeight() {
+  return cfg.items.reduce((s, i) => s + (i.weight || 1), 0);
 }
 
-function syncAccentLight(hex) {
-  const light = lightenHex(hex, 0.35);
-  state.clrAccentLight = light;
-  const el = document.getElementById('cp-accentlight');
-  if (el) el.value = light;
+function drawWheel() {
+  const items = cfg.items;
+  const n = items.length;
+  const cx = SIZE / 2, cy = SIZE / 2, r = SIZE / 2 - 4;
+  ctx.clearRect(0, 0, SIZE, SIZE);
+
+  if (!n) return;
+
+  const tw = totalWeight();
+  let cur = angle;
+
+  for (let i = 0; i < n; i++) {
+    const arc = ((items[i].weight || 1) / tw) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, cur, cur + arc);
+    ctx.closePath();
+    ctx.fillStyle = items[i].color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(232,184,75,0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Label
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(cur + arc / 2);
+    ctx.textAlign = 'right';
+    const fz = n > 12 ? 11 : n > 8 ? 13 : 15;
+    ctx.font = `700 ${fz}px 'Barlow Condensed', sans-serif`;
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur = 4;
+    let lbl = items[i].label;
+    if (lbl.length > 18) lbl = lbl.slice(0, 17) + '…';
+    ctx.fillText(lbl, r - 14, fz / 3);
+    ctx.restore();
+
+    cur += arc;
+  }
+
+  // Outer rim
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(232,184,75,0.6)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
 }
 
-function resetColors() {
-  const defaults = {
-    clrAccent:'#9147ff', clrAccentLight:'#bf94ff',
-    clrCardBg:'#1a1025', clrCardBorder:'#9147ff',
-    clrTitle:'#ffffff', clrSubtext:'#aaaaaa',
-    clrMsgBar:'#9147ff', clrProgressBg:'#9147ff',
-  };
-  Object.assign(state, defaults);
-  const picks = {
-    'cp-accent':state.clrAccent,'cp-accentlight':state.clrAccentLight,
-    'cp-cardbg':state.clrCardBg,'cp-cardborder':state.clrCardBorder,
-    'cp-title':state.clrTitle,'cp-subtext':state.clrSubtext,
-    'cp-msgbar':state.clrMsgBar,'cp-progress':state.clrProgressBg,
-  };
-  Object.entries(picks).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.value=val; });
-  save();
-  toast('Colours reset to default');
-}
-document.querySelectorAll('input,select').forEach(el => el.addEventListener('change', save));
-
-// ─────────────────────────────────────────────────────────────
-//  TWITCH OAUTH
-// ─────────────────────────────────────────────────────────────
-function loginWithTwitch() {
-  const clientId = document.getElementById('client-id-input').value.trim();
-  if (!clientId) { toast('Please enter your Twitch App Client ID first'); return; }
-  state.clientId = clientId;
-  localStorage.setItem('overlay-config', JSON.stringify(state));
-
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: REDIRECT_URI,
-    response_type: 'token',
-    scope: 'channel:read:redemptions user:read:email',
-  });
-
-  // Plain redirect — most reliable, GitHub Pages handles the hash correctly now
-  window.location.href = 'https://id.twitch.tv/oauth2/authorize?' + params.toString();
+function getWinner() {
+  const items = cfg.items;
+  const n = items.length;
+  if (!n) return null;
+  const tw = totalWeight();
+  const norm = (((-angle) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const frac = norm / (2 * Math.PI);
+  let acc = 0;
+  for (let i = 0; i < n; i++) {
+    acc += (items[i].weight || 1) / tw;
+    if (frac < acc) return items[i];
+  }
+  return items[n - 1];
 }
 
-async function fetchTwitchUser(token, autoDownload) {
-  // Client ID: prefer what's typed in the box, fall back to saved state
-  const clientId = (document.getElementById('client-id-input').value || '').trim()
-                || state.clientId || '';
+// ---- Spin logic ----
+function doSpin(redeemer) {
+  if (spinning || cfg.items.length < 2) return;
+  spinning = true;
+  const hub = document.getElementById('spin-hub');
+  hub.classList.add('disabled');
+  document.getElementById('wheel-canvas').classList.add('spinning');
+  const wc = document.getElementById('wheel-container');
+  wc.classList.remove('hidden');
+  wc.classList.add('visible');
+  // Force redraw now that container is visible and has dimensions
+  requestAnimationFrame(() => drawWheel());
+  // Pick winner upfront so we can aim the wheel exactly at its slice
+  const items = cfg.items;
+  const tw = totalWeight();
+  let roll = Math.random() * tw, acc = 0, winnerIdx = items.length - 1;
+  for (let i = 0; i < items.length; i++) {
+    acc += (items[i].weight || 1);
+    if (roll < acc) { winnerIdx = i; break; }
+  }
 
-  if (!clientId) {
-    toast('Please enter your Twitch App Client ID first');
-    document.getElementById('step1').classList.add('open');
-    document.getElementById('client-id-input').focus();
+  // Find angular position of the winning slice
+  let sliceStart = 0;
+  for (let i = 0; i < winnerIdx; i++) sliceStart += ((items[i].weight||1)/tw) * 2 * Math.PI;
+  const sliceArc = ((items[winnerIdx].weight||1)/tw) * 2 * Math.PI;
+  // Land randomly within middle 60% of slice so it never sits right on an edge
+  const landOffset = sliceArc * (0.2 + Math.random() * 0.6);
+  const sliceMid = sliceStart + landOffset;
+
+  // Random spin profile: determines rotations and duration
+  const spinProfile = Math.random();
+  const minRotations = spinProfile < 0.25 ? 3 + Math.floor(Math.random()*2)
+                     : spinProfile < 0.6  ? 5 + Math.floor(Math.random()*3)
+                     : spinProfile < 0.85 ? 7 + Math.floor(Math.random()*3)
+                     :                     10 + Math.floor(Math.random()*3);
+
+  // Solve for target: pointer reads at (-angle mod 2π) = sliceMid
+  const currentNorm = ((-angle) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+  let delta = sliceMid - currentNorm;
+  if (delta <= 0) delta += 2*Math.PI;
+  const targetAngle = angle - delta - minRotations * 2 * Math.PI;
+
+  const duration = spinProfile < 0.25 ? 3500 + Math.random()*1000
+                 : spinProfile < 0.6  ? 5000 + Math.random()*1500
+                 : spinProfile < 0.85 ? 6500 + Math.random()*1500
+                 :                      8500 + Math.random()*1500;
+
+  const startAngle = angle;
+  const startTime = performance.now();
+  let flutterDone = false;
+
+  function easeOut(t) {
+    // Cubic ease-out with optional subtle flutter near the end
+    if (!flutterDone && t > 0.85 && t < 0.93 && Math.random() < 0.003) flutterDone = true;
+    if (flutterDone && t > 0.85 && t < 0.93) {
+      const sub = (t - 0.85) / 0.08;
+      return 1 - Math.pow(1 - t, 3) - Math.sin(sub * Math.PI) * 0.007;
+    }
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  // Track which slice the pointer is currently in to fire ticks on boundary crossings
+  function getSliceIdx(a) {
+    const tw2 = totalWeight();
+    const norm = (((-a) % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+    const frac = norm / (2*Math.PI);
+    let acc = 0;
+    for (let i = 0; i < items.length; i++) {
+      acc += (items[i].weight||1) / tw2;
+      if (frac < acc) return i;
+    }
+    return items.length - 1;
+  }
+
+  let lastSliceIdx = getSliceIdx(angle);
+
+  function frame(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    angle = startAngle + (targetAngle - startAngle) * easeOut(t);
+    drawWheel();
+
+    // Tick once every time the pointer crosses into a new slice
+    const currentSliceIdx = getSliceIdx(angle);
+    if (currentSliceIdx !== lastSliceIdx) {
+      if (cfg.soundEnabled) playTick();
+      lastSliceIdx = currentSliceIdx;
+    }
+
+    if (t < 1) {
+      raf = requestAnimationFrame(frame);
+    } else {
+      angle = targetAngle;
+      drawWheel();
+      spinning = false;
+      hub.classList.remove('disabled');
+      document.getElementById('wheel-canvas').classList.remove('spinning');
+      if (cfg.soundEnabled) playWin();
+      showResult(items[winnerIdx], redeemer);
+      processQueue();
+    }
+  }
+  raf = requestAnimationFrame(frame);
+}
+
+function manualSpin() {
+  if (spinning) return;
+  doSpin(null);
+}
+
+// ---- Queue ----
+let lastRedemptionTime = 0;
+function enqueue(user) {
+  // Debounce — ignore duplicate events within 3 seconds
+  const now = Date.now();
+  if (now - lastRedemptionTime < 3000) {
+    console.log('[Wheel] Debounced duplicate redemption from', user);
     return;
   }
-
-  toast('Fetching your Twitch account...');
-
-  try {
-    const res = await fetch('https://api.twitch.tv/helix/users', {
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Client-Id': clientId
-      }
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      toast('Twitch API error ' + res.status + ': ' + errText.slice(0, 80));
-      return;
-    }
-
-    const data = await res.json();
-
-    if (!data.data || !data.data[0]) {
-      toast('Twitch returned no user — token may be expired. Please reconnect.');
-      return;
-    }
-
-    const user = data.data[0];
-    state.accessToken = token;
-    state.userId = user.id;
-    state.userLogin = user.login;
-    state.userDisplayName = user.display_name;
-    state.userAvatar = user.profile_image_url;
-    state.clientId = clientId;
-    save();
-    showLoggedIn();
-    markDone('step1');
-
-    if (autoDownload) {
-      const dl = document.getElementById('download-card');
-      if (dl) {
-        dl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        dl.classList.add('pulse');
-        setTimeout(() => dl.classList.remove('pulse'), 1800);
-      }
-      toast('Connected as ' + user.display_name + ' — ready to download!');
-    } else {
-      toast('Connected as ' + user.display_name);
-    }
-
-  } catch(e) {
-    toast('Network error: ' + e.message + '. Check your internet connection.');
+  lastRedemptionTime = now;
+  if (!spinning) {
+    doSpin(user);
+  } else {
+    queue.push(user);
+    updateQueuePill();
   }
 }
 
-function showLoggedIn() {
-  document.getElementById('login-section').style.display = 'none';
-  document.getElementById('loggedin-section').style.display = 'block';
-  document.getElementById('user-display-name').textContent = state.userDisplayName || state.userLogin;
-  const img = document.getElementById('user-avatar-img');
-  if (state.userAvatar) img.src = state.userAvatar;
-  markDone('step1');
+function processQueue() {
+  updateQueuePill();
+  if (queue.length > 0 && !spinning) {
+    const next = queue.shift();
+    updateQueuePill();
+    setTimeout(() => doSpin(next), 1000);
+  }
 }
 
-function disconnect() {
-  state.accessToken = ''; state.userId = ''; state.userLogin = '';
-  state.userDisplayName = ''; state.userAvatar = '';
-  save();
-  document.getElementById('login-section').style.display = 'block';
-  document.getElementById('loggedin-section').style.display = 'none';
-  document.getElementById('step1-num').textContent = '1';
-  document.getElementById('step1-num').classList.remove('done');
-  toast('Disconnected');
+function updateQueuePill() {
+  const pill = document.getElementById('queue-pill');
+  if (queue.length > 0) {
+    pill.classList.add('show');
+    document.getElementById('q-count').textContent = queue.length;
+  } else {
+    pill.classList.remove('show');
+  }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  UI HELPERS
-// ─────────────────────────────────────────────────────────────
-function toggleStep(id) { document.getElementById(id).classList.toggle('open'); }
-function markDone(stepId) { const n = document.getElementById(stepId+'-num'); n.textContent='✓'; n.classList.add('done'); }
+// ---- Result overlay ----
+let autoCloseTimer = null;
 
-function selectColor(el) { /* legacy - unused */ }
-
-function selectPos(el) {
-  document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  state.position = el.dataset.pos;
-  save();
+function showResult(item, user) {
+  document.getElementById('res-user').textContent = user ? user + ' redeemed:' : 'Challenge!';
+  document.getElementById('res-challenge').textContent = item.label;
+  document.getElementById('res-challenge').style.color = item.color;
+  document.getElementById('result-overlay').classList.add('show');
+  document.getElementById('spin-hub').style.display = 'none';
+  spawnConfetti(item.color);
+  startAutoClose();
+  setTimeout(() => document.getElementById('wheel-container').classList.add('hidden'), 1000);
 }
 
-function updatePreview() {
-  const acc = state.clrAccent || '#9147ff';
-  const acl = state.clrAccentLight || lightenHex(acc, 0.35);
-  const cbg = state.clrCardBg || '#0e0c14';
-  const cbr = state.clrCardBorder || acc;
-  const ctitle = state.clrTitle || '#ffffff';
-  const csub = state.clrSubtext || '#aaaaaa';
-  const cmsg = state.clrMsgBar || acc;
-  const cprog = state.clrProgressBg || acc;
-
-  const mp = document.getElementById('mini-popup');
-  mp.style.background = hexToRgba(cbg, 0.96);
-  mp.style.borderColor = hexToRgba(cbr, 0.55);
-
-  document.getElementById('mini-coin').style.background = 'linear-gradient(135deg,'+acc+','+acl+')';
-  document.getElementById('mini-bar').style.background = 'linear-gradient(90deg,'+cprog+','+acl+')';
-
-  const mt = mp.querySelector('.mini-title');
-  if (mt) mt.style.color = ctitle;
-  const mu = document.getElementById('mini-user-line');
-  if (mu) { mu.style.color = csub; if (state.userDisplayName) mu.textContent = state.userDisplayName + ' redeemed'; }
-
-  const mc = document.getElementById('mini-count');
-  mc.style.display = state.showCount ? '' : 'none';
-  mc.style.color = acl;
+function startAutoClose() {
+  clearTimeout(autoCloseTimer);
+  let remaining = 5 + Math.floor(Math.random() * 6);
+  const btn = document.getElementById('res-close');
+  btn.textContent = `Confirm [ESC] (${remaining}s)`;
+  const tick = setInterval(() => {
+    remaining--;
+    if (remaining > 0) {
+      btn.textContent = `Confirm [ESC] (${remaining}s)`;
+    } else {
+      clearInterval(tick);
+      closeResult();
+    }
+  }, 1000);
+  autoCloseTimer = tick;
 }
 
-function lightenHex(hex, amt) {
-  let r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
-  r=Math.min(255,Math.round(r+(255-r)*amt)); g=Math.min(255,Math.round(g+(255-g)*amt)); b=Math.min(255,Math.round(b+(255-b)*amt));
-  return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
-}
-function hexToRgba(hex, a) {
-  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
-  return 'rgba('+r+','+g+','+b+','+a+')';
-}
-
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2800);
+function closeResult() {
+  clearTimeout(autoCloseTimer);
+  document.getElementById('result-overlay').classList.remove('show');
+  document.getElementById('conf-container').innerHTML = '';
+  document.getElementById('res-close').textContent = 'Confirm [ESC]';
+  document.getElementById('spin-hub').style.display = '';
+  const wc = document.getElementById('wheel-container');
+  wc.classList.remove('visible');
+  wc.classList.add('hidden');
 }
 
-// ─────────────────────────────────────────────────────────────
-//  GENERATE OVERLAY HTML
-// ─────────────────────────────────────────────────────────────
-function generateOverlayHTML() {
-  const c      = state.clrAccent      || '#9147ff';
-  const cl     = state.clrAccentLight || lightenHex(c, 0.35);
-  const cbg    = state.clrCardBg      || '#1a1025';
-  const cbr    = state.clrCardBorder  || c;
-  const ctitle = state.clrTitle       || '#ffffff';
-  const csub   = state.clrSubtext     || '#aaaaaa';
-  const cmsg   = state.clrMsgBar      || c;
-  const cprog  = state.clrProgressBg  || c;
-  const cR     = (col, a) => hexToRgba(col, a);
-  const posMap = {
-    'top-left':   'align-items:flex-start;justify-content:flex-start',
-    'top-center': 'align-items:flex-start;justify-content:center',
-    'top-right':  'align-items:flex-start;justify-content:flex-end',
-    'mid-left':   'align-items:center;justify-content:flex-start',
-    'mid-center': 'align-items:center;justify-content:center',
-    'mid-right':  'align-items:center;justify-content:flex-end',
-    'bot-left':   'align-items:flex-end;justify-content:flex-start',
-    'bot-center': 'align-items:flex-end;justify-content:center',
-    'bot-right':  'align-items:flex-end;justify-content:flex-end',
+function spawnConfetti(baseColor) {
+  const container = document.getElementById('conf-container');
+  container.innerHTML = '';
+  const colors = [baseColor, '#e8b84b', '#4b9fe8', '#fff', '#e84b4b', '#5dca5d'];
+  for (let i = 0; i < 18; i++) {
+    const d = document.createElement('div');
+    d.className = 'confetti-dot';
+    d.style.cssText = `
+      left: ${Math.random() * 100}%;
+      top: ${-10 + Math.random() * 20}px;
+      background: ${colors[i % colors.length]};
+      width: ${5 + Math.random() * 8}px;
+      height: ${5 + Math.random() * 8}px;
+      animation-delay: ${Math.random() * 0.5}s;
+      animation-duration: ${1.2 + Math.random() * 0.6}s;
+    `;
+    container.appendChild(d);
+  }
+}
+
+// ---- Audio ----
+let audioCtx = null;
+let masterGain = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = cfg.volume ?? 0.7;
+    masterGain.connect(audioCtx.destination);
+  }
+  return audioCtx;
+}
+function getMaster() {
+  getAudioCtx();
+  return masterGain;
+}
+
+function playTick() {
+  try {
+    const ac = getAudioCtx();
+    const t = ac.currentTime;
+
+    // CS2 bomb beep approximation:
+    // Two rapid chirps ~80ms apart, each a short sine blip around 1050Hz
+    // with a tiny frequency drop (pitch bends down slightly on each chirp)
+    function chirp(offset) {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      const filter = ac.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1050;
+      filter.Q.value = 8;
+      o.type = 'sine';
+      o.frequency.setValueAtTime(1080, t + offset);
+      o.frequency.exponentialRampToValueAtTime(980, t + offset + 0.045);
+      o.connect(filter); filter.connect(g); g.connect(getMaster());
+      g.gain.setValueAtTime(0, t + offset);
+      g.gain.linearRampToValueAtTime(0.28, t + offset + 0.003);
+      g.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.055);
+      o.start(t + offset);
+      o.stop(t + offset + 0.06);
+    }
+
+    chirp(0);
+    chirp(0.075);
+  } catch(e) {}
+}
+
+function playWin() {
+  try {
+    const ac = getAudioCtx();
+    [523, 659, 784, 1047, 1319].forEach((f, i) => {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.connect(g); g.connect(getMaster());
+      o.frequency.value = f; o.type = 'triangle';
+      const t = ac.currentTime + i * 0.1;
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.start(t); o.stop(t + 0.3);
+    });
+  } catch(e) {}
+}
+
+// ---- Twitch OAuth ----
+function startTwitchAuth() {
+  const clientId = document.getElementById('cfg-clientid').value.trim() || cfg.clientId;
+  if (!clientId) { alert('Enter your Client ID first.'); return; }
+  cfg.clientId = clientId;
+  cfg.oauthToken = '';
+  saveCfg();
+  const scopes = 'channel:read:redemptions channel:manage:redemptions user:read:email';
+  const redirectUri = window.location.origin + window.location.pathname.replace(/\/?$/, '/');
+  const url = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scopes)}&force_verify=true`;
+  const popup = window.open(url, 'twitch-auth', 'width=500,height=750,left=200,top=100');
+  document.getElementById('cfg-auth-status').textContent = 'Waiting for Twitch login...';
+  let handled = false;
+  const poll = setInterval(() => {
+    if (handled) return;
+    try {
+      const hash = popup.location.hash;
+      if (hash && hash.includes('access_token')) {
+        handled = true;
+        clearInterval(poll);
+        const token = new URLSearchParams(hash.replace('#', '?')).get('access_token');
+        popup.close();
+        onTokenReceived(token);
+      }
+    } catch(e) {}
+    try {
+      if (!popup || popup.closed) {
+        clearInterval(poll);
+        if (!handled) {
+          // Popup closed without us catching the hash — check localStorage
+          const saved = JSON.parse(localStorage.getItem('wheelCfg') || '{}');
+          if (saved.oauthToken && saved.oauthToken !== cfg.oauthToken) {
+            handled = true;
+            onTokenReceived(saved.oauthToken);
+          } else {
+            document.getElementById('cfg-auth-status').textContent = 'Cancelled.';
+          }
+        }
+      }
+    } catch(e) {}
+  }, 300);
+}
+
+function onTokenReceived(token) {
+  cfg.oauthToken = token;
+  saveCfg();
+  fetch('https://id.twitch.tv/oauth2/validate', {
+    headers: { 'Authorization': 'OAuth ' + token }
+  }).then(r => r.json()).then(data => {
+    if (data.login) {
+      cfg.channel = data.login;
+      saveCfg();
+      document.getElementById('cfg-channel').value = data.login;
+      document.getElementById('cfg-auth-status').textContent = 'Connected as ' + data.login;
+    } else {
+      document.getElementById('cfg-auth-status').textContent = 'Authorised!';
+    }
+    document.getElementById('cfg-auth-btn').textContent = 'Re-connect Twitch';
+    document.getElementById('cfg-auth-btn').style.background = '#1e9e75';
+    document.getElementById('cfg-disconnect-btn').style.display = 'inline-block';
+    connectTwitch();
+  }).catch(() => {
+    document.getElementById('cfg-auth-status').textContent = 'Authorised!';
+    document.getElementById('cfg-auth-btn').textContent = 'Re-connect Twitch';
+    document.getElementById('cfg-auth-btn').style.background = '#1e9e75';
+    document.getElementById('cfg-disconnect-btn').style.display = 'inline-block';
+    connectTwitch();
+  });
+}
+
+// ---- Twitch EventSub WebSocket ----
+function connectTwitch() {
+  if (!cfg.oauthToken || !cfg.clientId) {
+    console.log('[Wheel] Missing token or clientId');
+    return;
+  }
+  if (ws) { ws.onclose = null; ws.onerror = null; ws.close(); ws = null; }
+  console.log('[Wheel] Connecting to EventSub...');
+  openEventSubSocket();
+}
+
+function openEventSubSocket(url) {
+  ws = new WebSocket(url || 'wss://eventsub.wss.twitch.tv/ws');
+
+  ws.onmessage = async e => {
+    try {
+      const msg = JSON.parse(e.data);
+      const type = msg.metadata?.message_type;
+      console.log('[Wheel] WS message type:', type);
+      window._debug('WS msg: ' + type);
+
+      if (type === 'session_welcome') {
+        eventsubSessionId = msg.payload.session.id;
+        console.log('[Wheel] Session ID:', eventsubSessionId);
+        window._debug('Session: ' + eventsubSessionId);
+        await resolveUserId();
+      }
+
+      if (type === 'session_reconnect') {
+        console.log('[Wheel] Reconnecting...');
+        const newUrl = msg.payload.session.reconnect_url;
+        ws.onclose = null;
+        ws.close();
+        openEventSubSocket(newUrl);
+      }
+
+      if (type === 'notification') {
+        const evt = msg.payload.event;
+        console.log('[Wheel] Notification event:', JSON.stringify(evt));
+        window._debug('Event: ' + JSON.stringify(evt).slice(0, 120));
+        if (!evt) return;
+        const rewardTitle = (evt.reward?.title || '').toLowerCase().trim();
+        const filter = (cfg.rewardFilter || '').toLowerCase().trim();
+        console.log('[Wheel] rewardTitle:', rewardTitle, 'filter:', filter);
+        window._debug('reward:"' + rewardTitle + '" filter:"' + filter + '"');
+        if (!filter || rewardTitle.includes(filter) || filter.includes(rewardTitle)) {
+          const user = evt.user_name || evt.user_login || 'viewer';
+          console.log('[Wheel] Enqueuing spin for:', user);
+          window._debug('SPIN: ' + user);
+          enqueue(user);
+        } else {
+          console.log('[Wheel] No match, skipping');
+          window._debug('NO MATCH');
+        }
+      }
+    } catch(ex) {
+      console.error('[Wheel] Message error:', ex);
+      window._debug('ERROR: ' + ex.message);
+    }
   };
-  const bodyPos  = posMap[state.position] || posMap['top-right'];
-  const dur      = state.duration * 1000;
-  const token    = state.accessToken || '';
-  const clientId = state.clientId    || '';
-  const userId   = state.userId      || '';
 
-  const soundCode = state.sound
-    ? 'let _actx=null;function playSound(){try{if(!_actx)_actx=new(window.AudioContext||window.webkitAudioContext)();const ctx=_actx;[523.25,659.25,783.99].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type="sine";o.frequency.value=f;const t=ctx.currentTime+i*0.13;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.35,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);o.start(t);o.stop(t+0.55);});}catch(e){}}'
-    : 'function playSound(){}';
-
-  const countHTML = state.showCount
-    ? '<span class="rc">\u00d7<span class="cn" id="cn">1</span></span>'
-    : '';
-
-  const css = [
-    '*{margin:0;padding:0;box-sizing:border-box;}',
-    'html{background-color:transparent!important;}',
-    'body{background-color:transparent!important;overflow:hidden;font-family:"Inter","Segoe UI",sans-serif;width:100vw;height:100vh;display:flex;' + bodyPos + ';padding:24px;}',
-    '#popup{position:relative;width:380px;background-color:' + cbg + ';border:2px solid ' + cbr + ';border-radius:16px;padding:20px 22px 18px;opacity:0;transform:translateX(40px) scale(0.96);pointer-events:none;}',
-    '#popup.show{animation:si 0.45s cubic-bezier(0.22,1,0.36,1) forwards;}',
-    '#popup.hide{animation:so 0.35s cubic-bezier(0.4,0,1,1) forwards;}',
-    '@keyframes si{0%{opacity:0;transform:translateX(40px) scale(0.95)}100%{opacity:1;transform:translateX(0) scale(1)}}',
-    '@keyframes so{0%{opacity:1;transform:translateX(0) scale(1)}100%{opacity:0;transform:translateX(40px) scale(0.95)}}',
-    '#pb{position:absolute;bottom:0;left:0;height:3px;width:100%;border-radius:0 0 16px 16px;overflow:hidden;}',
-    '#pf{height:100%;width:100%;background:linear-gradient(90deg,' + cprog + ',' + cl + ');transform-origin:left;transform:scaleX(1);}',
-    '.tr{display:flex;align-items:center;gap:12px;margin-bottom:14px;}',
-    '.ci{flex-shrink:0;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,' + c + ',' + cl + ');display:flex;align-items:center;justify-content:center;}',
-    '.ci svg{width:20px;height:20px;}',
-    '.badge{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:' + cl + ';border:1px solid ' + cR(c,0.6) + ';border-radius:6px;padding:3px 8px;white-space:nowrap;}',
-    '.sp{flex:1;}',
-    '.xb{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;background:transparent;color:rgba(100,100,100,0.6);font-size:13px;}',
-    '.nr{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}',
-    '.rn{font-size:17px;font-weight:700;color:' + ctitle + ';letter-spacing:-.01em;line-height:1.25;word-break:break-word;flex:1;}',
-    '.rc{font-size:11px;font-weight:600;color:' + cl + ';white-space:nowrap;flex-shrink:0;}',
-    '.cn{color:' + cl + ';font-weight:700;display:inline-block;}',
-    '.cn.bump{animation:bump 0.35s cubic-bezier(0.22,1,0.36,1);}',
-    '@keyframes bump{0%{transform:scale(1)}45%{transform:scale(1.45);color:#fff}100%{transform:scale(1)}}',
-    '.ur{display:flex;align-items:center;gap:8px;margin-bottom:10px;}',
-    '.av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,' + c + ',#18181b);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;border:1.5px solid ' + cR(c,0.5) + ';overflow:hidden;}',
-    '.un{font-size:13px;font-weight:600;color:' + cl + ';}',
-    '.rl{font-size:13px;color:' + csub + ';}',
-    '.um{font-size:13.5px;color:' + ctitle + ';line-height:1.55;border-left:2.5px solid ' + cmsg + ';border-radius:0 8px 8px 0;padding:8px 12px;margin-top:6px;word-break:break-word;}',
-    '@keyframes pr{0%,100%{box-shadow:0 0 0 4px ' + cR(c,0.18) + '}50%{box-shadow:0 0 0 8px ' + cR(c,0.06) + '}}',
-    '#popup.show .ci{animation:pr 2s ease-in-out infinite;}',
-  ].join('\n');
-
-  const html = '<!DOCTYPE html>\n'
-    + '<html lang="en"><head><meta charset="UTF-8"><title>Twitch Redemption Overlay</title>\n'
-    + '<style>\n' + css + '\n</style></head><body>\n'
-    + '<div id="popup">\n'
-    + '  <div class="tr">\n'
-    + '    <div class="ci"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="rgba(255,255,255,0.12)"/><path d="M12 6.5C9.52 6.5 7.5 8.52 7.5 11C7.5 13.48 9.52 15.5 12 15.5C14.48 15.5 16.5 13.48 16.5 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/><circle cx="16.5" cy="11" r="1" fill="white"/><path d="M12 15.5V18" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M9.5 18H14.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div>\n'
-    + '    <span class="badge">Channel Points</span>\n'
-    + '    <div class="sp"></div>\n'
-    + '    <button class="xb" onclick="hidePopup()">&#x2715;</button>\n'
-    + '  </div>\n'
-    + '  <div class="nr"><div class="rn" id="rn">Loading...</div>' + countHTML + '</div>\n'
-    + '  <div class="ur"><div class="av"><span id="ai">?</span></div><span class="un" id="un"></span><span class="rl">redeemed</span></div>\n'
-    + '  <div class="um" id="um" style="display:none"></div>\n'
-    + '  <div id="pb"><div id="pf"></div></div>\n'
-    + '</div>\n'
-    + '<script>\n'
-    + 'const CFG={displayDuration:' + dur + ',queue:true};\n'
-    + 'let vis=false,ht=null;\n'
-    + 'const Q=[],RC={};\n'
-    + soundCode + '\n'
-    + 'function show(d){const pop=document.getElementById("popup");const title=d.rewardTitle||"Channel Point Reward";RC[title]=(RC[title]||0)+1;document.getElementById("rn").textContent=title;document.getElementById("un").textContent=d.userDisplayName||d.userName||"viewer";document.getElementById("ai").textContent=(d.userDisplayName||d.userName||"?").slice(0,2).toUpperCase();const ce=document.getElementById("cn");if(ce){ce.textContent=RC[title];ce.classList.remove("bump");void ce.offsetWidth;ce.classList.add("bump");}const me=document.getElementById("um");if(d.userInput&&d.userInput.trim()){me.textContent='"'+d.userInput.trim()+'"';me.style.display="block";}else{me.style.display="none";}playSound();vis=true;pop.classList.remove("hide");pop.classList.add("show");const pf=document.getElementById("pf");pf.style.transition="none";pf.style.transform="scaleX(1)";requestAnimationFrame(()=>requestAnimationFrame(()=>{pf.style.transition="transform "+CFG.displayDuration+"ms linear";pf.style.transform="scaleX(0)";}));clearTimeout(ht);ht=setTimeout(hidePopup,CFG.displayDuration);}\n'
-    + 'function hidePopup(){const pop=document.getElementById("popup");if(!vis)return;clearTimeout(ht);pop.classList.remove("show");pop.classList.add("hide");vis=false;pop.addEventListener("animationend",function h(){pop.classList.remove("hide");pop.removeEventListener("animationend",h);if(Q.length>0){const n=Q.shift();setTimeout(()=>show(n),200);}},{once:true});}\n'
-    + 'window.triggerRedemption=function(d){if(vis&&CFG.queue)Q.push(d);else show(d);};\n'
-    + 'const ACCESS_TOKEN="' + token + '";\n'
-    + 'const CLIENT_ID="' + clientId + '";\n'
-    + 'const USER_ID="' + userId + '";\n'
-    + '(function connectEventSub(){if(!ACCESS_TOKEN||!USER_ID)return;const ws=new WebSocket("wss://eventsub.wss.twitch.tv/ws");ws.onmessage=async(e)=>{const msg=JSON.parse(e.data);const type=msg.metadata&&msg.metadata.message_type;if(type==="session_welcome"){const sessionId=msg.payload.session.id;await fetch("https://api.twitch.tv/helix/eventsub/subscriptions",{method:"POST",headers:{"Authorization":"Bearer "+ACCESS_TOKEN,"Client-Id":CLIENT_ID,"Content-Type":"application/json"},body:JSON.stringify({type:"channel.channel_points_custom_reward_redemption.add",version:"1",condition:{broadcaster_user_id:USER_ID},transport:{method:"websocket",session_id:sessionId}})});}if(type==="notification"){const ev=msg.payload.event;triggerRedemption({rewardTitle:ev.reward.title,userDisplayName:ev.user_name,userName:ev.user_login,userInput:ev.user_input||""});}};ws.onclose=()=>setTimeout(connectEventSub,5000);})();\n'
-    + '<\/script>\n'
-    + '</body></html>';
-
-  return html;
+  ws.onerror = e => console.error('[Wheel] WS error:', e);
+  ws.onclose = e => {
+    console.log('[Wheel] WS closed, code:', e.code, 'clean:', e.wasClean);
+    window._debug('WS closed code:' + e.code);
+    // Auto-reconnect after 10s on unexpected close (not code 4003 which means auth failed)
+    if (e.code !== 1000 && e.code !== 4003) setTimeout(() => openEventSubSocket(), 10000);
+  };
 }
 
-function downloadOverlay() {
-  save();
-  if (!state.accessToken) { toast('Connect your Twitch account first (Step 1)'); return; }
-  const html = generateOverlayHTML();
-  const blob = new Blob([html], {type:'text/html'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'twitch-redemption-overlay.html'; a.click();
-  toast('Overlay downloaded!');
-  markDone('step2'); markDone('step3');
+async function resolveUserId() {
+  try {
+    // First validate token and log scopes
+    const valRes = await fetch('https://id.twitch.tv/oauth2/validate', {
+      headers: { 'Authorization': 'OAuth ' + cfg.oauthToken }
+    });
+    const valData = await valRes.json();
+    console.log('[Wheel] Token validation:', JSON.stringify(valData));
+    window._debug('Scopes: ' + (valData.scopes||[]).join(', '));
+
+    const channelName = cfg.channel.trim().toLowerCase();
+    if (!channelName) { console.log('[Wheel] No channel set'); return; }
+    console.log('[Wheel] Resolving user ID for:', channelName);
+    window._debug('Resolving: ' + channelName);
+    const res = await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
+      headers: { 'Client-Id': cfg.clientId, 'Authorization': `Bearer ${cfg.oauthToken}` }
+    });
+    const data = await res.json();
+    console.log('[Wheel] Users response:', JSON.stringify(data));
+    window._debug('Users API: ' + JSON.stringify(data).slice(0,80));
+    if (!data.data?.length) { console.log('[Wheel] Channel not found'); return; }
+    twitchUserId = data.data[0].id;
+    console.log('[Wheel] User ID:', twitchUserId);
+    window._debug('UserID: ' + twitchUserId);
+    await subscribeEventSub();
+  } catch(e) {
+    console.error('[Wheel] resolveUserId error:', e);
+    window._debug('resolveUserId ERROR: ' + e.message);
+  }
 }
 
-function previewOverlay() {
-  save();
-  const html = generateOverlayHTML();
-  const blob = new Blob([html], {type:'text/html'});
-  window.open(URL.createObjectURL(blob), '_blank');
+async function subscribeEventSub() {
+  try {
+    const body = {
+      type: 'channel.channel_points_custom_reward_redemption.add',
+      version: '1',
+      condition: { broadcaster_user_id: twitchUserId },
+      transport: { method: 'websocket', session_id: eventsubSessionId }
+    };
+    console.log('[Wheel] Subscribing EventSub:', JSON.stringify(body));
+    window._debug('Subscribing EventSub...');
+    const res = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+      method: 'POST',
+      headers: {
+        'Client-Id': cfg.clientId,
+        'Authorization': `Bearer ${cfg.oauthToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    console.log('[Wheel] Subscribe response', res.status, JSON.stringify(data));
+    window._debug('Subscribe ' + res.status + ': ' + JSON.stringify(data).slice(0,80));
+  } catch(e) {
+    console.error('[Wheel] subscribeEventSub error:', e);
+    window._debug('Subscribe ERROR: ' + e.message);
+  }
 }
 
-updatePreview();
+async function validateToken(token, statusEl) {
+  try {
+    const res = await fetch('https://id.twitch.tv/oauth2/validate', {
+      headers: { 'Authorization': 'OAuth ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      statusEl.textContent = 'Token invalid — reconnect Twitch.';
+      statusEl.style.color = '#e84b4b';
+      return;
+    }
+    const scopes = data.scopes || [];
+    const hasScope = scopes.includes('channel:read:redemptions');
+    if (hasScope) {
+      statusEl.textContent = 'Token OK · scopes: ' + scopes.join(', ');
+      statusEl.style.color = '#5dca5d';
+    } else {
+      statusEl.textContent = 'Missing scope! Disconnect and reconnect Twitch.';
+      statusEl.style.color = '#e84b4b';
+    }
+    console.log('[Wheel] Token scopes:', scopes);
+  } catch(e) {
+    statusEl.textContent = 'Could not validate token.';
+  }
+}
+
+function disconnectTwitch() {
+  if (ws) { ws.onclose = null; ws.onerror = null; ws.close(); ws = null; }
+  cfg.oauthToken = '';
+  saveCfg();
+  document.getElementById('cfg-auth-btn').textContent = 'Connect with Twitch';
+  document.getElementById('cfg-auth-btn').style.background = '#9146ff';
+  document.getElementById('cfg-auth-status').textContent = 'Disconnected.';
+  document.getElementById('cfg-disconnect-btn').style.display = 'none';
+  console.log('[Wheel] Disconnected and token cleared');
+}
+
+function setStatus(state, text) {
+  console.log('[Wheel] Status:', state, text);
+}
+
+// ---- Config panel ----
+function openConfig() {
+  const p = document.getElementById('config-panel');
+  p.classList.add('open');
+  document.getElementById('cfg-clientid').value = cfg.clientId || '';
+  document.getElementById('cfg-clientid').value = cfg.clientId || '';
+  document.getElementById('cfg-channel').value = cfg.channel || '';
+  document.getElementById('cfg-reward').value = cfg.rewardFilter || '';
+  const authBtn = document.getElementById('cfg-auth-btn');
+  const authSt = document.getElementById('cfg-auth-status');
+  const discBtn = document.getElementById('cfg-disconnect-btn');
+  if (cfg.oauthToken) {
+    authBtn.textContent = 'Re-connect Twitch'; authBtn.style.background = '#1e9e75';
+    authSt.textContent = 'Checking token...';
+    discBtn.style.display = 'inline-block';
+    validateToken(cfg.oauthToken, authSt);
+  } else {
+    authBtn.textContent = 'Connect with Twitch'; authBtn.style.background = '#9146ff';
+    authSt.textContent = ''; discBtn.style.display = 'none';
+  }
+  document.getElementById('cfg-sound').value = cfg.soundEnabled ? 'on' : 'off';
+  const vol = Math.round((cfg.volume ?? 0.7) * 100);
+  document.getElementById('cfg-volume').value = vol;
+  document.getElementById('cfg-vol-out').textContent = vol + '%';
+  renderCfgItems();
+}
+
+function cfgClose() {
+  document.getElementById('config-panel').classList.remove('open');
+}
+
+function renderCfgItems() {
+  const el = document.getElementById('items-cfg');
+  el.innerHTML = cfg.items.map((it, i) =>
+    `<div class="cfg-item">
+      <input type="color" value="${it.color}" onchange="cfg.items[${i}].color=this.value"/>
+      <input type="text" value="${esc(it.label)}" placeholder="Challenge label" onchange="cfg.items[${i}].label=this.value"/>
+      <input type="number" min="1" max="9" value="${it.weight||1}" title="Weight (1=rare, 9=common)" onchange="cfg.items[${i}].weight=Math.max(1,+this.value||1)"/>
+      <button onclick="cfgDelItem(${i})">Remove</button>
+    </div>`
+  ).join('');
+}
+
+function cfgAddItem() {
+  cfg.items.push({ label: 'New challenge', color: '#1a3a1a', weight: 1 });
+  renderCfgItems();
+}
+
+window.cfgDelItem = i => {
+  cfg.items.splice(i, 1);
+  renderCfgItems();
+};
+
+function cfgSave() {
+  cfg.clientId = document.getElementById('cfg-clientid').value.trim();
+  cfg.channel = document.getElementById('cfg-channel').value.trim().toLowerCase();
+  cfg.rewardFilter = document.getElementById('cfg-reward').value.trim();
+  cfg.soundEnabled = document.getElementById('cfg-sound').value.trim().toLowerCase() !== 'off';
+  cfg.volume = parseInt(document.getElementById('cfg-volume').value) / 100;
+  if (masterGain) masterGain.gain.value = cfg.volume;
+  saveCfg();
+  drawWheel();
+  const s = document.getElementById('cfg-status');
+  s.style.display = 'block';
+  setTimeout(() => { s.style.display = 'none'; cfgClose(); }, 1200);
+}
+
+function cfgReset() {
+  if (!confirm('Reset all items to defaults? This cannot be undone.')) return;
+  localStorage.removeItem('wheelCfg');
+  cfg = Object.assign({}, DEFAULTS, { items: JSON.parse(JSON.stringify(DEFAULTS.items)) });
+  drawWheel();
+  renderCfgItems();
+  document.getElementById('cfg-clientid').value = cfg.clientId || '';
+  document.getElementById('cfg-clientid').value = cfg.clientId || '';
+  document.getElementById('cfg-channel').value = cfg.channel || '';
+  document.getElementById('cfg-reward').value = cfg.rewardFilter || '';
+  const authBtn = document.getElementById('cfg-auth-btn');
+  const authSt = document.getElementById('cfg-auth-status');
+  const discBtn = document.getElementById('cfg-disconnect-btn');
+  if (cfg.oauthToken) {
+    authBtn.textContent = 'Re-connect Twitch'; authBtn.style.background = '#1e9e75';
+    authSt.textContent = 'Checking token...';
+    discBtn.style.display = 'inline-block';
+    validateToken(cfg.oauthToken, authSt);
+  } else {
+    authBtn.textContent = 'Connect with Twitch'; authBtn.style.background = '#9146ff';
+    authSt.textContent = ''; discBtn.style.display = 'none';
+  }
+  document.getElementById('cfg-sound').value = cfg.soundEnabled ? 'on' : 'off';
+  const vol2 = Math.round((cfg.volume ?? 0.7) * 100);
+  document.getElementById('cfg-volume').value = vol2;
+  document.getElementById('cfg-vol-out').textContent = vol2 + '%';
+  if (masterGain) masterGain.gain.value = cfg.volume;
+  const s = document.getElementById('cfg-status');
+  s.textContent = 'Reset to defaults!';
+  s.style.display = 'block';
+  setTimeout(() => { s.style.display = 'none'; s.textContent = 'Saved!'; }, 1500);
+}
+
+function esc(s) { return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// ---- Init ----
+// Debug overlay — only shown with ?debug=1 in URL
+if (new URLSearchParams(window.location.search).get('debug') === '1') {
+  const dbg = document.createElement('div');
+  dbg.id = 'debug-overlay';
+  dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.85);color:#e8b84b;font-family:monospace;font-size:11px;padding:8px;z-index:9999;max-height:200px;overflow-y:auto;white-space:pre-wrap;';
+  dbg.textContent = 'Debug mode on. Waiting for events...';
+  document.body.appendChild(dbg);
+  window._debug = (msg) => {
+    dbg.textContent = new Date().toLocaleTimeString() + ' ' + msg + '\n' + dbg.textContent;
+  };
+  window._debug('Token: ' + (cfg.oauthToken ? 'SET' : 'NOT SET'));
+  window._debug('ClientID: ' + (cfg.clientId ? cfg.clientId.slice(0,8)+'...' : 'NOT SET'));
+  window._debug('Channel: ' + (cfg.channel || 'NOT SET'));
+  window._debug('Reward filter: ' + (cfg.rewardFilter || '(any)'));
+} else {
+  window._debug = () => {};
+}
+
+// Handle OAuth redirect — if we landed here with a token in the hash, save it and close
+(function handleOAuthRedirect() {
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    const token = new URLSearchParams(hash.replace('#', '?')).get('access_token');
+    if (token) {
+      // Load existing config, save token, then show success and close
+      const existing = JSON.parse(localStorage.getItem('wheelCfg') || '{}');
+      existing.oauthToken = token;
+      localStorage.setItem('wheelCfg', JSON.stringify(existing));
+      document.body.style.background = '#0a0c0a';
+      document.body.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:'Barlow Condensed',sans-serif;color:#e8b84b;text-align:center;gap:16px;">
+          <div style="font-size:48px;">✓</div>
+          <div style="font-size:22px;font-weight:700;letter-spacing:2px;">TWITCH CONNECTED</div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.5);">You can close this window.</div>
+        </div>`;
+      setTimeout(() => window.close(), 2000);
+    }
+    return;
+  }
+})();
+
+drawWheel();
+if (cfg.channel) connectTwitch();
+
+// Open config if ?config=1 in URL
+if (new URLSearchParams(window.location.search).get('config') === '1') {
+  openConfig();
+}
+
+// ---- Drag to move ----
+function makeDraggable(el) {
+  let startX, startY, origX, origY;
+  el.addEventListener('mousedown', e => {
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    startX = e.clientX; startY = e.clientY;
+    origX = parseInt(el.style.left) || 0;
+    origY = parseInt(el.style.top) || 0;
+    el.classList.add('dragging');
+    function onMove(e) {
+      el.style.left = (origX + e.clientX - startX) + 'px';
+      el.style.top  = (origY + e.clientY - startY) + 'px';
+    }
+    function onUp() {
+      el.classList.remove('dragging');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+makeDraggable(document.getElementById('wheel-container'));
+makeDraggable(document.getElementById('result-overlay'));
+
+// Keyboard shortcut: press S to spin manually (useful when testing)
+document.addEventListener('keydown', e => {
+  const configOpen = document.getElementById('config-panel').classList.contains('open');
+  const typing = ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName) || e.target.isContentEditable;
+  if (configOpen || typing) return;
+  if (e.key === 's' || e.key === 'S') { e.preventDefault(); manualSpin(); }
+  if (e.key === 'Escape') closeResult();
+  if (e.key === 'c' || e.key === 'C') { e.preventDefault(); openConfig(); }
+});
 </script>
 </body>
 </html>
