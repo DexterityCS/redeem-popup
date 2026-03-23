@@ -42,25 +42,29 @@ html, body {
 
 /* ---- Wheel ---- */
 #wheel-container {
-  position: relative;
+  position: absolute;
+  top: calc(50vh - 250px);
+  right: 20px;
   width: var(--wheel-size);
   height: var(--wheel-size);
-  flex-shrink: 0;
-  visibility: hidden;
+  display: none;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.6s ease, visibility 0.6s ease;
+  transition: opacity 0.6s ease;
+  cursor: grab;
+  user-select: none;
 }
 #wheel-container.visible {
-  visibility: visible;
+  display: block;
   opacity: 1;
   pointer-events: all;
 }
 #wheel-container.hidden {
-  visibility: hidden;
+  display: none;
   opacity: 0;
   pointer-events: none;
 }
+#wheel-container.dragging { cursor: grabbing; }
 
 #wheel-canvas {
   border-radius: 50%;
@@ -171,19 +175,23 @@ html, body {
 
 /* ---- Result overlay — bomb detonation card ---- */
 #result-overlay {
-  display: flex;
-  align-items: center; justify-content: center;
+  display: none;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 500px;
   pointer-events: none;
-  visibility: hidden;
   opacity: 0;
-  transition: opacity 0.3s, visibility 0.3s;
-  width: 100%;
+  transition: opacity 0.3s;
+  cursor: grab;
+  user-select: none;
 }
 #result-overlay.show {
-  visibility: visible;
+  display: block;
   opacity: 1;
   pointer-events: all;
 }
+#result-overlay.dragging { cursor: grabbing; }
 
 #result-card {
   background: var(--bg-panel);
@@ -1192,13 +1200,16 @@ if (new URLSearchParams(window.location.search).get('config') === '1') {
 
 // ---- Drag to move ----
 function makeDraggable(el) {
-  let startX, startY, origX, origY;
   el.addEventListener('mousedown', e => {
     if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
     e.preventDefault();
-    startX = e.clientX; startY = e.clientY;
-    origX = parseInt(el.style.left) || 0;
-    origY = parseInt(el.style.top) || 0;
+    const rect = el.getBoundingClientRect();
+    // Switch from right-based to left-based positioning for dragging
+    el.style.right = 'auto';
+    el.style.left = rect.left + 'px';
+    el.style.top = rect.top + 'px';
+    const startX = e.clientX, startY = e.clientY;
+    const origX = rect.left, origY = rect.top;
     el.classList.add('dragging');
     function onMove(e) {
       el.style.left = (origX + e.clientX - startX) + 'px';
