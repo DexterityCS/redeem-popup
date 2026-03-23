@@ -305,10 +305,11 @@
     <div class="step-body">
       <div class="info-box">
         <strong>1.</strong> Download the overlay file below.<br>
-        <strong>2.</strong> In OBS, add a <strong>Browser Source</strong>.<br>
+        <strong>2.</strong> In OBS/SLOBS, add a <strong>Browser Source</strong>.<br>
         <strong>3.</strong> Tick <strong>Local file</strong> and browse to <code>twitch-redemption-overlay.html</code>.<br>
         <strong>4.</strong> Set width <strong>1920</strong>, height <strong>1080</strong>.<br>
-        <strong>5.</strong> Tick <strong>Refresh browser when scene becomes active</strong>.
+        <strong>5.</strong> In the <strong>Custom CSS</strong> box, paste: <code>body { background-color: rgba(0,0,0,0) !important; }</code><br>
+        <strong>6.</strong> Tick <strong>Refresh browser when scene becomes active</strong>.
       </div>
       <div class="info-box warning" style="margin-top:10px">
         The overlay file contains your Twitch token. <strong>Keep it private</strong> — don't share the downloaded file with others. Each person should run setup themselves.
@@ -337,7 +338,7 @@ const state = {
   // granular colors
   clrAccent:     '#9147ff',  // icon bg, badge, border glow, progress bar, avatar border
   clrAccentLight:'#bf94ff',  // username, count, badge text
-  clrCardBg:     '#0e0c14',  // popup background
+  clrCardBg:     '#0e0c14',  // popup background (solid, no transparency)
   clrCardBorder: '#9147ff',  // popup border
   clrTitle:      '#ffffff',  // reward title text
   clrSubtext:    '#aaaaaa',  // "redeemed" label
@@ -635,9 +636,10 @@ function playSound(){try{const ctx=_actxGet();[523.25,659.25,783.99].forEach((f,
 <html lang="en"><head><meta charset="UTF-8"><title>Twitch Redemption Overlay</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:transparent!important;overflow:hidden;font-family:'Inter','Segoe UI',sans-serif;width:100vw;height:100vh;display:flex;${bodyPos};padding:24px;}html{background:transparent!important;}
+html,body{background:transparent!important;overflow:hidden;font-family:'Inter','Segoe UI',sans-serif;width:100vw;height:100vh;}
+body{display:flex;${bodyPos};padding:24px;}
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-#popup{position:relative;width:380px;background:\${hexToRgba(cbg,0.97)};border:1px solid \${cR(cbr,0.5)};border-radius:16px;padding:20px 22px 18px;box-shadow:0 0 0 1px \${cR(cbr,0.12)},0 8px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.06);opacity:0;transform:translateX(40px) scale(0.96);pointer-events:none;}
+#popup{position:relative;width:380px;background:\${cbg};border:1px solid \${cR(cbr,0.6)};border-radius:16px;padding:20px 22px 18px;box-shadow:0 0 0 1px \${cR(cbr,0.15)},inset 0 1px 0 rgba(255,255,255,0.06);opacity:0;transform:translateX(40px) scale(0.96);pointer-events:none;}
 #popup.show{animation:si 0.45s cubic-bezier(0.22,1,0.36,1) forwards;}
 #popup.hide{animation:so 0.35s cubic-bezier(0.4,0,1,1) forwards;}
 @keyframes si{0%{opacity:0;transform:translateX(40px) scale(0.95)}100%{opacity:1;transform:translateX(0) scale(1)}}
