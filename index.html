@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Redemption Overlay — Setup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple: #9147ff; --purple-light: #bf94ff;
+    --purple-dim: rgba(145,71,255,0.15); --purple-border: rgba(145,71,255,0.35);
+    --bg: #0e0c14; --bg2: #16131f; --bg3: #1e1a2e;
+    --text: #f0eeff; --text2: rgba(240,238,255,0.55); --text3: rgba(240,238,255,0.3);
+    --border: rgba(255,255,255,0.08);
+    --green: #00c97a; --green-dim: rgba(0,201,122,0.12);
+    --red: #ff4d6a; --radius: 12px;
+  }
+  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:40px 24px 80px; }
+  .page { max-width:680px; margin:0 auto; }
+
+  .header { display:flex; align-items:center; gap:14px; margin-bottom:36px; }
+  .logo { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,#9147ff,#bf94ff); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .logo svg { width:24px; height:24px; }
+  .header-text h1 { font-size:20px; font-weight:700; }
+  .header-text p { font-size:13px; color:var(--text2); margin-top:2px; }
+
+  .step { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px; overflow:hidden; }
+  .step-header { display:flex; align-items:center; gap:14px; padding:18px 20px; cursor:pointer; user-select:none; }
+  .step-header:hover { background:rgba(255,255,255,0.02); }
+  .step-num { width:28px; height:28px; border-radius:50%; background:var(--purple-dim); border:1px solid var(--purple-border); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:var(--purple-light); flex-shrink:0; transition:all 0.2s; }
+  .step-num.done { background:rgba(0,201,122,0.15); border-color:rgba(0,201,122,0.4); color:var(--green); }
+  .step-title { font-size:15px; font-weight:600; flex:1; }
+  .step-subtitle { font-size:12px; color:var(--text3); margin-top:2px; }
+  .chevron { color:var(--text3); font-size:11px; transition:transform 0.2s; flex-shrink:0; }
+  .step.open .chevron { transform:rotate(180deg); }
+  .step-body { display:none; padding:0 20px 20px; border-top:1px solid var(--border); }
+  .step.open .step-body { display:block; }
+
+  label { display:block; font-size:12px; font-weight:600; color:var(--text2); margin:16px 0 6px; letter-spacing:0.03em; }
+  input[type=text], input[type=number], select {
+    width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:8px;
+    padding:10px 14px; color:var(--text); font-size:14px; font-family:'Inter',sans-serif; outline:none; transition:border-color 0.15s;
+  }
+  input:focus, select:focus { border-color:var(--purple-border); }
+  select option { background:var(--bg3); }
+  .input-row { display:flex; gap:10px; }
+  .input-row > * { flex:1; }
+
+  .toggle-row { display:flex; align-items:center; justify-content:space-between; margin-top:16px; }
+  .toggle-label { font-size:13px; color:var(--text2); }
+  .toggle-wrap { position:relative; width:40px; height:22px; }
+  .toggle-wrap input { opacity:0; width:0; height:0; position:absolute; }
+  .toggle-track { position:absolute; inset:0; background:var(--bg3); border:1px solid var(--border); border-radius:11px; cursor:pointer; transition:background 0.2s; }
+  .toggle-wrap input:checked ~ .toggle-track { background:var(--purple); border-color:var(--purple); }
+  .toggle-knob { position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform 0.2s; pointer-events:none; }
+  .toggle-wrap input:checked ~ .toggle-track ~ .toggle-knob { transform:translateX(18px); }
+
+  .info-box { background:var(--purple-dim); border:1px solid var(--purple-border); border-radius:8px; padding:12px 14px; font-size:13px; color:var(--text2); line-height:1.6; margin-top:14px; }
+  .info-box strong { color:var(--text); }
+  .info-box.success { background:var(--green-dim); border-color:rgba(0,201,122,0.3); }
+  .info-box.warning { background:rgba(255,180,0,0.08); border-color:rgba(255,180,0,0.25); }
+  .info-box code { background:rgba(255,255,255,0.08); padding:1px 5px; border-radius:4px; font-family:monospace; font-size:12px; }
+
+  .code-block { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:14px; font-family:'Courier New',monospace; font-size:12px; color:#bf94ff; line-height:1.7; margin-top:12px; white-space:pre-wrap; word-break:break-all; position:relative; }
+  .copy-btn { position:absolute; top:8px; right:8px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:11px; color:var(--text2); cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; }
+  .copy-btn:hover { border-color:var(--purple-border); color:var(--text); }
+  .copy-btn.copied { color:var(--green); border-color:rgba(0,201,122,0.4); }
+
+  .primary-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px; background:var(--purple); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; margin-top:16px; transition:background 0.15s,transform 0.1s; font-family:'Inter',sans-serif; }
+  .primary-btn:hover { background:#a259ff; }
+  .primary-btn:active { transform:scale(0.98); }
+  .primary-btn:disabled { opacity:0.4; cursor:not-allowed; }
+  .secondary-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:12px; background:transparent; color:var(--text2); border:1px solid var(--border); border-radius:10px; font-size:14px; font-weight:500; cursor:pointer; margin-top:10px; transition:all 0.15s; font-family:'Inter',sans-serif; }
+  .secondary-btn:hover { border-color:var(--purple-border); color:var(--text); }
+
+  /* Twitch login button */
+  .twitch-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:14px; background:#9147ff; color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:16px; transition:background 0.15s; font-family:'Inter',sans-serif; letter-spacing:0.01em; }
+  .twitch-btn:hover { background:#a259ff; }
+  .twitch-btn svg { width:22px; height:22px; flex-shrink:0; }
+
+  /* connected user card */
+  .user-card { display:flex; align-items:center; gap:12px; background:var(--bg3); border:1px solid rgba(0,201,122,0.25); border-radius:10px; padding:14px 16px; margin-top:14px; }
+  .user-avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#9147ff,#18181b); overflow:hidden; flex-shrink:0; }
+  .user-avatar img { width:100%; height:100%; object-fit:cover; }
+  .user-info .name { font-size:15px; font-weight:700; }
+  .user-info .tag { font-size:12px; color:var(--green); margin-top:2px; }
+  .user-disconnect { margin-left:auto; font-size:12px; color:var(--text3); cursor:pointer; border:none; background:none; color:var(--text3); font-family:'Inter',sans-serif; text-decoration:underline; padding:4px; }
+  .user-disconnect:hover { color:var(--red); }
+
+  /* color swatches */
+  .color-row { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .swatch { width:32px; height:32px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:border-color 0.15s,transform 0.1s; }
+  .swatch:hover { transform:scale(1.1); }
+  .swatch.active { border-color:#fff; }
+
+  /* color pickers grid */
+  .color-grid { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .cpick-row { display:flex; align-items:center; justify-content:space-between; background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:8px 12px; }
+  .cpick-label { font-size:13px; color:var(--text2); }
+  .cpick { width:48px; height:28px; border:none; border-radius:6px; cursor:pointer; padding:0; background:none; }
+  .cpick::-webkit-color-swatch-wrapper { padding:0; }
+  .cpick::-webkit-color-swatch { border:none; border-radius:4px; }
+
+  /* position grid */
+  .position-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; }
+  .pos-btn { aspect-ratio:1; border:1px solid var(--border); border-radius:8px; background:var(--bg3); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; transition:all 0.15s; }
+  .pos-btn:hover { border-color:var(--purple-border); }
+  .pos-btn.active { border-color:var(--purple); background:var(--purple-dim); }
+
+  /* range */
+  .range-row { display:flex; align-items:center; gap:12px; margin-top:8px; }
+  .range-row input[type=range] { flex:1; }
+  .range-val { font-size:13px; font-weight:600; color:var(--purple-light); min-width:36px; text-align:right; }
+
+  /* preview */
+  .preview-wrap { background:linear-gradient(135deg,#1a1040,#0e0c14); border:1px solid var(--border); border-radius:10px; padding:20px; margin-top:14px; display:flex; justify-content:flex-end; min-height:120px; align-items:center; }
+  .mini-popup { width:260px; background:rgba(14,12,20,0.95); border:1px solid rgba(145,71,255,0.5); border-radius:12px; padding:12px 14px 10px; }
+  .mini-top { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .mini-coin { width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#9147ff,#bf94ff); flex-shrink:0; }
+  .mini-badge { font-size:9px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#bf94ff; background:rgba(145,71,255,0.2); border:1px solid rgba(145,71,255,0.35); border-radius:4px; padding:2px 6px; }
+  .mini-title { font-size:12px; font-weight:700; color:#fff; margin-bottom:3px; }
+  .mini-user { font-size:11px; color:#bf94ff; }
+  .mini-bar { height:2px; background:linear-gradient(90deg,#9147ff,#bf94ff); border-radius:0 0 12px 12px; margin:8px -14px -10px; }
+
+  .divider { height:1px; background:var(--border); margin:16px 0; }
+
+  /* download card */
+  .download-card { background:linear-gradient(135deg,rgba(145,71,255,0.12),rgba(145,71,255,0.04)); border:1px solid var(--purple-border); border-radius:var(--radius); padding:24px; margin-top:24px; }
+  .download-card h3 { font-size:16px; font-weight:700; margin-bottom:6px; }
+  .download-card p { font-size:13px; color:var(--text2); line-height:1.6; margin-bottom:16px; }
+
+  @keyframes pulse-card {
+    0%,100% { box-shadow: 0 0 0 0 rgba(145,71,255,0); }
+    50% { box-shadow: 0 0 0 8px rgba(145,71,255,0.35); }
+  }
+  .download-card.pulse { animation: pulse-card 0.9s ease-in-out 2; }
+
+  #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px 20px; font-size:13px; color:var(--text); opacity:0; transition:all 0.25s; pointer-events:none; white-space:nowrap; z-index:9999; }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .status-row { display:flex; align-items:center; gap:8px; margin-top:12px; font-size:13px; }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:var(--text3); flex-shrink:0; transition:background 0.3s; }
+  .status-dot.connected { background:var(--green); box-shadow:0 0 6px rgba(0,201,122,0.5); }
+  .status-dot.error { background:var(--red); }
+  .status-text { color:var(--text2); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" fill="rgba(255,255,255,0.15)"/>
+        <path d="M12 6.5C9.52 6.5 7.5 8.52 7.5 11C7.5 13.48 9.52 15.5 12 15.5C14.48 15.5 16.5 13.48 16.5 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="16.5" cy="11" r="1" fill="white"/>
+        <path d="M12 15.5V18" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M9.5 18H14.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Redemption Overlay — Setup</h1>
+      <p>Connect your Twitch account, customise the look, download and go</p>
+    </div>
+  </div>
+
+  <!-- STEP 1: Twitch login -->
+  <div class="step open" id="step1">
+    <div class="step-header" onclick="toggleStep('step1')">
+      <div class="step-num" id="step1-num">1</div>
+      <div>
+        <div class="step-title">Connect Twitch Account</div>
+        <div class="step-subtitle">Log in so the overlay can listen for your channel point redemptions</div>
+      </div>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="step-body">
+
+      <!-- Not logged in -->
+      <div id="login-section">
+        <div class="info-box">
+          Clicking the button below opens Twitch's official login page. The overlay only requests <strong>read</strong> permission for channel point redemptions — it cannot modify anything on your channel.
+        </div>
+
+        <div class="info-box warning" style="margin-top:10px">
+          <strong>One-time setup required:</strong> You need a free Twitch app Client ID. 
+          <a href="https://dev.twitch.tv/console/apps/create" target="_blank" style="color:#bf94ff">Register one here</a> 
+          (set OAuth redirect to <code id="redirect-display"></code>), then paste it below.
+        </div>
+
+        <label>Twitch App Client ID</label>
+        <input type="text" id="client-id-input" placeholder="e.g. abc123xyz456..." value="">
+
+        <button class="twitch-btn" onclick="loginWithTwitch()">
+          <svg viewBox="0 0 24 24" fill="white"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+          Connect with Twitch
+        </button>
+      </div>
+
+      <!-- Logged in -->
+      <div id="loggedin-section" style="display:none">
+        <div class="user-card">
+          <div class="user-avatar"><img id="user-avatar-img" src="" alt=""></div>
+          <div class="user-info">
+            <div class="name" id="user-display-name">—</div>
+            <div class="tag">✓ Connected — listening for redemptions</div>
+          </div>
+          <button class="user-disconnect" onclick="disconnect()">Disconnect</button>
+        </div>
+        <div class="status-row">
+          <div class="status-dot connected" id="eventsub-dot"></div>
+          <span class="status-text" id="eventsub-text">EventSub WebSocket ready</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- STEP 2: Appearance -->
+  <div class="step" id="step2">
+    <div class="step-header" onclick="toggleStep('step2')">
+      <div class="step-num" id="step2-num">2</div>
+      <div>
+        <div class="step-title">Appearance</div>
+        <div class="step-subtitle">Customise colours, position and timing</div>
+      </div>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="step-body">
+
+      <label>Colours</label>
+      <div class="color-grid">
+        <div class="cpick-row"><span class="cpick-label">Accent</span><input type="color" class="cpick" id="cp-accent" value="#9147ff" oninput="onColorChange('clrAccent',this.value);syncAccentLight(this.value);" onchange="save()"></div>
+        <div class="cpick-row"><span class="cpick-label">Accent highlight</span><input type="color" class="cpick" id="cp-accentlight" value="#bf94ff" oninput="onColorChange('clrAccentLight',this.value)" onchange="save()"></div>
+        <div class="cpick-row"><span class="cpick-label">Card background</span><input type="color" class="cpick" id="cp-cardbg" value="#0e0c14" oninput="onColorChange('clrCardBg',this.value)" onchange="save()"></div>
+        <div class="cpick-row"><span class="cpick-label">Card border</span><input type="color" class="cpick" id="cp-cardborder" value="#9147ff" oninput="onColorChange('clrCardBorder',this.value)" onchange="save()"></div>
+        <div class="cpick-row"><span class="cpick-label">Title text</span><input type="color" class="cpick" id="cp-title" value="#ffffff" oninput="onColorChange('clrTitle',this.value)" onchange="save()"></div>
+        <div class="cpick-row"><span class="cpick-label">"Redeemed" label</span><input type="color" class="cpick" id="cp-subtext" value="#aaaaaa" oninput="onColorChange('clrSubtext',this.value)" onchange="save()"></div>
+        <div class="cpick-row"><span class="cpick-label">Message bar</span><input type="color" class="cpick" id="cp-msgbar" value="#9147ff" oninput="onColorChange('clrMsgBar',this.value)" onchange="save()"></div>
+        <div class="cpick-row"><span class="cpick-label">Progress bar</span><input type="color" class="cpick" id="cp-progress" value="#9147ff" oninput="onColorChange('clrProgressBg',this.value)" onchange="save()"></div>
+      </div>
+      <button class="secondary-btn" style="margin-top:10px;padding:8px" onclick="resetColors()">↺ Reset to default</button>
+
+      <label>Position on screen</label>
+      <div class="position-grid">
+        <div class="pos-btn" data-pos="top-left"   onclick="selectPos(this)">↖</div>
+        <div class="pos-btn" data-pos="top-center" onclick="selectPos(this)">↑</div>
+        <div class="pos-btn active" data-pos="top-right"  onclick="selectPos(this)">↗</div>
+        <div class="pos-btn" data-pos="mid-left"   onclick="selectPos(this)">←</div>
+        <div class="pos-btn" data-pos="mid-center" onclick="selectPos(this)">·</div>
+        <div class="pos-btn" data-pos="mid-right"  onclick="selectPos(this)">→</div>
+        <div class="pos-btn" data-pos="bot-left"   onclick="selectPos(this)">↙</div>
+        <div class="pos-btn" data-pos="bot-center" onclick="selectPos(this)">↓</div>
+        <div class="pos-btn" data-pos="bot-right"  onclick="selectPos(this)">↘</div>
+      </div>
+
+      <label>Display duration</label>
+      <div class="range-row">
+        <input type="range" min="3" max="15" value="7" id="duration-slider" oninput="document.getElementById('duration-val').textContent=this.value+'s';save();">
+        <span class="range-val" id="duration-val">7s</span>
+      </div>
+
+      <div class="toggle-row">
+        <span class="toggle-label">Play sound effect</span>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="toggle-sound" checked onchange="save()">
+          <div class="toggle-track"></div><div class="toggle-knob"></div>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <span class="toggle-label">Show redemption count</span>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="toggle-count" checked onchange="save()">
+          <div class="toggle-track"></div><div class="toggle-knob"></div>
+        </label>
+      </div>
+
+      <label>Preview</label>
+      <div class="preview-wrap">
+        <div class="mini-popup" id="mini-popup">
+          <div class="mini-top">
+            <div class="mini-coin" id="mini-coin"></div>
+            <span class="mini-badge">Channel Points</span>
+          </div>
+          <div class="mini-title">Hydrate the Streamer! <span id="mini-count" style="font-size:10px;font-weight:600;color:#bf94ff">×3</span></div>
+          <div class="mini-user" id="mini-user-line">CoolViewer99 redeemed</div>
+          <div class="mini-bar" id="mini-bar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: OBS -->
+  <div class="step" id="step3">
+    <div class="step-header" onclick="toggleStep('step3')">
+      <div class="step-num" id="step3-num">3</div>
+      <div>
+        <div class="step-title">Add to OBS / Streamlabs</div>
+        <div class="step-subtitle">One browser source, and you're live</div>
+      </div>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="step-body">
+      <div class="info-box">
+        <strong>1.</strong> Download the overlay file below.<br>
+        <strong>2.</strong> In OBS, add a <strong>Browser Source</strong>.<br>
+        <strong>3.</strong> Tick <strong>Local file</strong> and browse to <code>twitch-redemption-overlay.html</code>.<br>
+        <strong>4.</strong> Set width <strong>1920</strong>, height <strong>1080</strong>.<br>
+        <strong>5.</strong> Tick <strong>Refresh browser when scene becomes active</strong>.
+      </div>
+      <div class="info-box warning" style="margin-top:10px">
+        The overlay file contains your Twitch token. <strong>Keep it private</strong> — don't share the downloaded file with others. Each person should run setup themselves.
+      </div>
+    </div>
+  </div>
+
+  <!-- Download -->
+  <div class="download-card" id="download-card">
+    <h3>Download your overlay</h3>
+    <p>Your Twitch login and appearance settings will be baked into the file. Just add it as a Browser Source in OBS and it will automatically connect to Twitch and listen for redemptions.</p>
+    <button class="primary-btn" id="download-btn" onclick="downloadOverlay()">⬇ Download Overlay</button>
+    <button class="secondary-btn" onclick="previewOverlay()">👁 Open Preview in new tab</button>
+  </div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────
+const state = {
+  // accent (legacy, kept for compat)
+  color: '#9147ff',
+  // granular colors
+  clrAccent:     '#9147ff',  // icon bg, badge, border glow, progress bar, avatar border
+  clrAccentLight:'#bf94ff',  // username, count, badge text
+  clrCardBg:     '#0e0c14',  // popup background
+  clrCardBorder: '#9147ff',  // popup border
+  clrTitle:      '#ffffff',  // reward title text
+  clrSubtext:    '#aaaaaa',  // "redeemed" label
+  clrMsgBar:     '#9147ff',  // left bar on user message
+  clrProgressBg: '#9147ff',  // progress bar fill start
+  position: 'top-right',
+  duration: 7, sound: true, showCount: true,
+  clientId: '', accessToken: '', userId: '', userLogin: '',
+  userDisplayName: '', userAvatar: '',
+};
+
+// Set redirect URI to current page
+const REDIRECT_URI = window.location.href.split('?')[0].split('#')[0];
+document.getElementById('redirect-display').textContent = REDIRECT_URI;
+
+// Load saved state
+try {
+  const saved = JSON.parse(localStorage.getItem('overlay-config') || '{}');
+  Object.assign(state, saved);
+  applyLoaded();
+} catch(e) {}
+
+// Handle OAuth callback (token is in URL hash)
+(function handleOAuthCallback() {
+  const hash = window.location.hash;
+  if (!hash.includes('access_token')) return;
+  const params = new URLSearchParams(hash.slice(1));
+  const token = params.get('access_token');
+  if (!token) return;
+  state.accessToken = token;
+  // Clean URL
+  history.replaceState(null, '', window.location.pathname);
+  // Fetch user info then auto-download
+  fetchTwitchUser(token, true);
+})();
+
+function applyLoaded() {
+  document.getElementById('client-id-input').value = state.clientId || '';
+  document.getElementById('duration-slider').value = state.duration;
+  document.getElementById('duration-val').textContent = state.duration + 's';
+  document.getElementById('toggle-sound').checked = state.sound;
+  document.getElementById('toggle-count').checked = state.showCount;
+  document.querySelectorAll('.pos-btn').forEach(b => b.classList.toggle('active', b.dataset.pos === state.position));
+  // restore color pickers
+  const picks = {
+    'cp-accent': state.clrAccent, 'cp-accentlight': state.clrAccentLight,
+    'cp-cardbg': state.clrCardBg, 'cp-cardborder': state.clrCardBorder,
+    'cp-title': state.clrTitle, 'cp-subtext': state.clrSubtext,
+    'cp-msgbar': state.clrMsgBar, 'cp-progress': state.clrProgressBg,
+  };
+  Object.entries(picks).forEach(([id, val]) => { const el = document.getElementById(id); if (el && val) el.value = val; });
+  if (state.accessToken && state.userDisplayName) showLoggedIn();
+  updatePreview();
+}
+
+function save() {
+  state.duration = parseInt(document.getElementById('duration-slider').value);
+  state.sound = document.getElementById('toggle-sound').checked;
+  state.showCount = document.getElementById('toggle-count').checked;
+  state.clientId = document.getElementById('client-id-input').value.trim();
+  localStorage.setItem('overlay-config', JSON.stringify(state));
+  updatePreview();
+}
+
+function onColorChange(key, value) {
+  state[key] = value;
+  // keep legacy state.color in sync with accent
+  if (key === 'clrAccent') state.color = value;
+  updatePreview();
+}
+
+function syncAccentLight(hex) {
+  const light = lightenHex(hex, 0.35);
+  state.clrAccentLight = light;
+  const el = document.getElementById('cp-accentlight');
+  if (el) el.value = light;
+}
+
+function resetColors() {
+  const defaults = {
+    clrAccent:'#9147ff', clrAccentLight:'#bf94ff',
+    clrCardBg:'#0e0c14', clrCardBorder:'#9147ff',
+    clrTitle:'#ffffff', clrSubtext:'#aaaaaa',
+    clrMsgBar:'#9147ff', clrProgressBg:'#9147ff',
+  };
+  Object.assign(state, defaults);
+  const picks = {
+    'cp-accent':state.clrAccent,'cp-accentlight':state.clrAccentLight,
+    'cp-cardbg':state.clrCardBg,'cp-cardborder':state.clrCardBorder,
+    'cp-title':state.clrTitle,'cp-subtext':state.clrSubtext,
+    'cp-msgbar':state.clrMsgBar,'cp-progress':state.clrProgressBg,
+  };
+  Object.entries(picks).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.value=val; });
+  save();
+  toast('Colours reset to default');
+}
+document.querySelectorAll('input,select').forEach(el => el.addEventListener('change', save));
+
+// ─────────────────────────────────────────────────────────────
+//  TWITCH OAUTH
+// ─────────────────────────────────────────────────────────────
+function loginWithTwitch() {
+  const clientId = document.getElementById('client-id-input').value.trim();
+  if (!clientId) { toast('Please enter your Twitch App Client ID first'); return; }
+  state.clientId = clientId;
+  localStorage.setItem('overlay-config', JSON.stringify(state));
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: REDIRECT_URI,
+    response_type: 'token',
+    scope: 'channel:read:redemptions user:read:email',
+  });
+
+  // Open Twitch login in a small popup — keeps the setup page open
+  const w = 600, h = 700;
+  const left = Math.round(screen.width/2 - w/2);
+  const top  = Math.round(screen.height/2 - h/2);
+  window.open(
+    'https://id.twitch.tv/oauth2/authorize?' + params.toString(),
+    'twitch_login',
+    'width='+w+',height='+h+',left='+left+',top='+top+',toolbar=no,menubar=no'
+  );
+  toast('Complete login in the popup window...');
+}
+
+async function fetchTwitchUser(token, autoDownload) {
+  try {
+    const clientId = state.clientId || document.getElementById('client-id-input').value.trim();
+    const res = await fetch('https://api.twitch.tv/helix/users', {
+      headers: { 'Authorization': 'Bearer ' + token, 'Client-Id': clientId }
+    });
+    const data = await res.json();
+    if (!data.data || !data.data[0]) throw new Error('No user data');
+    const user = data.data[0];
+    state.accessToken = token;
+    state.userId = user.id;
+    state.userLogin = user.login;
+    state.userDisplayName = user.display_name;
+    state.userAvatar = user.profile_image_url;
+    state.clientId = clientId;
+    save();
+    showLoggedIn();
+    markDone('step1');
+    if (autoDownload) {
+      // Scroll to download card and highlight it
+      const dl = document.getElementById('download-card');
+      if (dl) {
+        dl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        dl.classList.add('pulse');
+        setTimeout(() => dl.classList.remove('pulse'), 1800);
+      }
+      toast('Connected as ' + user.display_name + ' — ready to download!');
+    } else {
+      toast('Connected as ' + user.display_name);
+    }
+  } catch(e) {
+    toast('Could not fetch user info — check your Client ID is correct');
+  }
+}
+
+function showLoggedIn() {
+  document.getElementById('login-section').style.display = 'none';
+  document.getElementById('loggedin-section').style.display = 'block';
+  document.getElementById('user-display-name').textContent = state.userDisplayName || state.userLogin;
+  const img = document.getElementById('user-avatar-img');
+  if (state.userAvatar) img.src = state.userAvatar;
+  markDone('step1');
+}
+
+function disconnect() {
+  state.accessToken = ''; state.userId = ''; state.userLogin = '';
+  state.userDisplayName = ''; state.userAvatar = '';
+  save();
+  document.getElementById('login-section').style.display = 'block';
+  document.getElementById('loggedin-section').style.display = 'none';
+  document.getElementById('step1-num').textContent = '1';
+  document.getElementById('step1-num').classList.remove('done');
+  toast('Disconnected');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  UI HELPERS
+// ─────────────────────────────────────────────────────────────
+function toggleStep(id) { document.getElementById(id).classList.toggle('open'); }
+function markDone(stepId) { const n = document.getElementById(stepId+'-num'); n.textContent='✓'; n.classList.add('done'); }
+
+function selectColor(el) { /* legacy - unused */ }
+
+function selectPos(el) {
+  document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  state.position = el.dataset.pos;
+  save();
+}
+
+function updatePreview() {
+  const acc = state.clrAccent || '#9147ff';
+  const acl = state.clrAccentLight || lightenHex(acc, 0.35);
+  const cbg = state.clrCardBg || '#0e0c14';
+  const cbr = state.clrCardBorder || acc;
+  const ctitle = state.clrTitle || '#ffffff';
+  const csub = state.clrSubtext || '#aaaaaa';
+  const cmsg = state.clrMsgBar || acc;
+  const cprog = state.clrProgressBg || acc;
+
+  const mp = document.getElementById('mini-popup');
+  mp.style.background = hexToRgba(cbg, 0.96);
+  mp.style.borderColor = hexToRgba(cbr, 0.55);
+
+  document.getElementById('mini-coin').style.background = 'linear-gradient(135deg,'+acc+','+acl+')';
+  document.getElementById('mini-bar').style.background = 'linear-gradient(90deg,'+cprog+','+acl+')';
+
+  const mt = mp.querySelector('.mini-title');
+  if (mt) mt.style.color = ctitle;
+  const mu = document.getElementById('mini-user-line');
+  if (mu) { mu.style.color = csub; if (state.userDisplayName) mu.textContent = state.userDisplayName + ' redeemed'; }
+
+  const mc = document.getElementById('mini-count');
+  mc.style.display = state.showCount ? '' : 'none';
+  mc.style.color = acl;
+}
+
+function lightenHex(hex, amt) {
+  let r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  r=Math.min(255,Math.round(r+(255-r)*amt)); g=Math.min(255,Math.round(g+(255-g)*amt)); b=Math.min(255,Math.round(b+(255-b)*amt));
+  return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function hexToRgba(hex, a) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  GENERATE OVERLAY HTML
+// ─────────────────────────────────────────────────────────────
+function generateOverlayHTML() {
+  const c   = state.clrAccent     || state.color || '#9147ff';
+  const cl  = state.clrAccentLight|| lightenHex(c, 0.35);
+  const cbg = state.clrCardBg     || '#0e0c14';
+  const cbr = state.clrCardBorder || c;
+  const ctitle = state.clrTitle   || '#ffffff';
+  const csub   = state.clrSubtext || '#aaaaaa';
+  const cmsg   = state.clrMsgBar  || c;
+  const cprog  = state.clrProgressBg || c;
+  const cR = (col, a) => hexToRgba(col, a);
+  const posMap = {
+    'top-left':'align-items:flex-start;justify-content:flex-start',
+    'top-center':'align-items:flex-start;justify-content:center',
+    'top-right':'align-items:flex-start;justify-content:flex-end',
+    'mid-left':'align-items:center;justify-content:flex-start',
+    'mid-center':'align-items:center;justify-content:center',
+    'mid-right':'align-items:center;justify-content:flex-end',
+    'bot-left':'align-items:flex-end;justify-content:flex-start',
+    'bot-center':'align-items:flex-end;justify-content:center',
+    'bot-right':'align-items:flex-end;justify-content:flex-end',
+  };
+  const bodyPos = posMap[state.position] || posMap['top-right'];
+  const dur = state.duration * 1000;
+
+  const soundCode = state.sound ? `
+let _actx=null;
+function _actxGet(){if(!_actx)_actx=new(window.AudioContext||window.webkitAudioContext)();return _actx;}
+function playSound(){try{const ctx=_actxGet();[523.25,659.25,783.99].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.value=f;const t=ctx.currentTime+i*0.13;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.35,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);o.start(t);o.stop(t+0.55);});}catch(e){}}` : `function playSound(){}`;
+
+  const countHTML = state.showCount ? `<span class="rc">\u00d7<span class="cn" id="cn">1</span></span>` : '';
+
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Twitch Redemption Overlay</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:transparent;overflow:hidden;font-family:'Inter','Segoe UI',sans-serif;width:100vw;height:100vh;display:flex;${bodyPos};padding:24px;}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+#popup{position:relative;width:380px;background:\${hexToRgba(cbg,0.96)};border:1px solid \${cR(cbr,0.5)};border-radius:16px;padding:20px 22px 18px;backdrop-filter:blur(12px);box-shadow:0 0 0 1px \${cR(cbr,0.12)},0 8px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.06);opacity:0;transform:translateX(40px) scale(0.96);pointer-events:none;}
+#popup.show{animation:si 0.45s cubic-bezier(0.22,1,0.36,1) forwards;}
+#popup.hide{animation:so 0.35s cubic-bezier(0.4,0,1,1) forwards;}
+@keyframes si{0%{opacity:0;transform:translateX(40px) scale(0.95)}100%{opacity:1;transform:translateX(0) scale(1)}}
+@keyframes so{0%{opacity:1;transform:translateX(0) scale(1)}100%{opacity:0;transform:translateX(40px) scale(0.95)}}
+#pb{position:absolute;bottom:0;left:0;height:3px;width:100%;border-radius:0 0 16px 16px;overflow:hidden;background:rgba(255,255,255,0.06);}
+#pf{height:100%;width:100%;background:linear-gradient(90deg,\${cprog},\${cl});transform-origin:left;transform:scaleX(1);}
+.tr{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.ci{flex-shrink:0;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,\${c},\${cl});display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px \${cR(c,0.18)};}
+.ci svg{width:20px;height:20px;}
+.badge{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:\${cl};background:\${cR(c,0.18)};border:1px solid \${cR(c,0.3)};border-radius:6px;padding:3px 8px;white-space:nowrap;}
+.sp{flex:1;}
+.xb{width:22px;height:22px;background:rgba(255,255,255,0.06);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;color:rgba(255,255,255,0.35);font-size:13px;}
+.nr{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}
+.rn{font-size:17px;font-weight:700;color:\${ctitle};letter-spacing:-.01em;line-height:1.25;word-break:break-word;flex:1;}
+.rc{font-size:11px;font-weight:600;color:\${cR(cl,0.8)};white-space:nowrap;flex-shrink:0;}
+.cn{color:\${cl};font-weight:700;display:inline-block;}
+.cn.bump{animation:bump 0.35s cubic-bezier(0.22,1,0.36,1);}
+@keyframes bump{0%{transform:scale(1)}45%{transform:scale(1.45);color:#fff}100%{transform:scale(1)}}
+.ur{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,\${c},#18181b);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;border:1.5px solid \${cR(c,0.5)};overflow:hidden;}
+.un{font-size:13px;font-weight:600;color:\${cl};}
+.rl{font-size:13px;color:\${csub};}
+.um{font-size:13.5px;color:rgba(255,255,255,0.75);line-height:1.55;background:rgba(255,255,255,0.04);border-left:2.5px solid \${cR(cmsg,0.7)};border-radius:0 8px 8px 0;padding:8px 12px;margin-top:6px;word-break:break-word;}
+@keyframes pr{0%,100%{box-shadow:0 0 0 4px \${cR(c,0.18)}}50%{box-shadow:0 0 0 8px \${cR(c,0.06)}}}
+#popup.show .ci{animation:pr 2s ease-in-out infinite;}
+</style></head><body>
+<div id="popup">
+  <div class="tr">
+    <div class="ci"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="rgba(255,255,255,0.12)"/><path d="M12 6.5C9.52 6.5 7.5 8.52 7.5 11C7.5 13.48 9.52 15.5 12 15.5C14.48 15.5 16.5 13.48 16.5 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/><circle cx="16.5" cy="11" r="1" fill="white"/><path d="M12 15.5V18" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M9.5 18H14.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+    <span class="badge">Channel Points</span>
+    <div class="sp"></div>
+    <button class="xb" onclick="hidePopup()">&#x2715;</button>
+  </div>
+  <div class="nr"><div class="rn" id="rn">Loading...</div>${countHTML}</div>
+  <div class="ur"><div class="av"><span id="ai">?</span></div><span class="un" id="un"></span><span class="rl">redeemed</span></div>
+  <div class="um" id="um" style="display:none"></div>
+  <div id="pb"><div id="pf"></div></div>
+</div>
+<script>
+const CFG={displayDuration:${dur},queue:true};
+let vis=false,ht=null;
+const Q=[],RC={};
+${soundCode}
+function show(d){
+  const pop=document.getElementById('popup');
+  const title=d.rewardTitle||'Channel Point Reward';
+  RC[title]=(RC[title]||0)+1;
+  const cnt=RC[title];
+  document.getElementById('rn').textContent=title;
+  document.getElementById('un').textContent=d.userDisplayName||d.userName||'viewer';
+  document.getElementById('ai').textContent=(d.userDisplayName||d.userName||'?').slice(0,2).toUpperCase();
+  const ce=document.getElementById('cn');
+  if(ce){ce.textContent=cnt;ce.classList.remove('bump');void ce.offsetWidth;ce.classList.add('bump');}
+  const me=document.getElementById('um');
+  if(d.userInput&&d.userInput.trim()){me.textContent='"'+d.userInput.trim()+'"';me.style.display='block';}else{me.style.display='none';}
+  playSound();
+  vis=true;pop.classList.remove('hide');pop.classList.add('show');
+  const pf=document.getElementById('pf');
+  pf.style.transition='none';pf.style.transform='scaleX(1)';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{pf.style.transition='transform '+CFG.displayDuration+'ms linear';pf.style.transform='scaleX(0)';}));
+  clearTimeout(ht);ht=setTimeout(hidePopup,CFG.displayDuration);
+}
+function hidePopup(){
+  const pop=document.getElementById('popup');
+  if(!vis)return;clearTimeout(ht);
+  pop.classList.remove('show');pop.classList.add('hide');vis=false;
+  pop.addEventListener('animationend',function h(){pop.classList.remove('hide');pop.removeEventListener('animationend',h);if(Q.length>0){const n=Q.shift();setTimeout(()=>show(n),200);}},{once:true});
+}
+window.triggerRedemption=function(d){if(vis&&CFG.queue)Q.push(d);else show(d);};
+
+// ── Twitch EventSub via WebSocket (no server needed) ──────────
+const ACCESS_TOKEN = '${state.accessToken}';
+const CLIENT_ID    = '${state.clientId}';
+const USER_ID      = '${state.userId}';
+
+(function connectEventSub() {
+  if (!ACCESS_TOKEN || !USER_ID) return;
+  const ws = new WebSocket('wss://eventsub.wss.twitch.tv/ws');
+  ws.onmessage = async (e) => {
+    const msg = JSON.parse(e.data);
+    const type = msg.metadata && msg.metadata.message_type;
+    if (type === 'session_welcome') {
+      const sessionId = msg.payload.session.id;
+      // Subscribe to channel point redemptions
+      await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + ACCESS_TOKEN,
+          'Client-Id': CLIENT_ID,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'channel.channel_points_custom_reward_redemption.add',
+          version: '1',
+          condition: { broadcaster_user_id: USER_ID },
+          transport: { method: 'websocket', session_id: sessionId }
+        })
+      });
+    }
+    if (type === 'notification') {
+      const ev = msg.payload.event;
+      triggerRedemption({
+        rewardTitle:     ev.reward.title,
+        userDisplayName: ev.user_name,
+        userName:        ev.user_login,
+        userInput:       ev.user_input || ''
+      });
+    }
+  };
+  ws.onclose = () => setTimeout(connectEventSub, 5000);
+})();
+<\/script>
+</body></html>`;
+}
+
+function downloadOverlay() {
+  save();
+  if (!state.accessToken) { toast('Connect your Twitch account first (Step 1)'); return; }
+  const html = generateOverlayHTML();
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'twitch-redemption-overlay.html'; a.click();
+  toast('Overlay downloaded!');
+  markDone('step2'); markDone('step3');
+}
+
+function previewOverlay() {
+  save();
+  const html = generateOverlayHTML();
+  const blob = new Blob([html], {type:'text/html'});
+  window.open(URL.createObjectURL(blob), '_blank');
+}
+
+updatePreview();
+</script>
+</body>
+</html>
