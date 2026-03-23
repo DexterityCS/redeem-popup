@@ -407,6 +407,7 @@ html, body {
 
   <div>
     <button id="cfg-save" onclick="cfgSave()">Save &amp; apply</button>
+    <button id="cfg-copy-url" onclick="copySlobsUrl()" style="padding:10px 20px;font-size:12px;font-family:'Share Tech Mono',monospace;background:transparent;border:1px solid var(--border);border-radius:2px;color:var(--accent);cursor:pointer;margin-right:8px;">Copy SLOBS URL</button>
     <button id="cfg-cancel" onclick="cfgClose()">Cancel</button>
     <button id="cfg-reset" onclick="cfgReset()" style="padding:10px 20px;font-size:12px;background:transparent;border:1px solid rgba(232,75,75,0.4);border-radius:2px;color:#e88888;cursor:pointer;font-family:'Share Tech Mono',monospace;margin-left:8px;">Reset to defaults</button>
     <div id="cfg-status">Saved!</div>
@@ -449,6 +450,19 @@ let eventsubSessionId = null;
 let twitchUserId = null;
 
 function loadCfg() {
+  // URL params take priority — allows full config via URL for SLOBS plug-and-play
+  const params = new URLSearchParams(window.location.search);
+  const fromUrl = {};
+  if (params.get('clientId'))     fromUrl.clientId     = params.get('clientId');
+  if (params.get('token'))        fromUrl.oauthToken   = params.get('token');
+  if (params.get('channel'))      fromUrl.channel      = params.get('channel');
+  if (params.get('reward'))       fromUrl.rewardFilter = params.get('reward');
+  if (params.get('volume'))       fromUrl.volume       = parseFloat(params.get('volume'));
+  if (Object.keys(fromUrl).length > 0) {
+    // URL config present — merge over defaults, skip localStorage
+    console.log('[Wheel] Loaded config from URL params');
+    return Object.assign({}, DEFAULTS, fromUrl);
+  }
   try {
     const s = localStorage.getItem('wheelCfg');
     if (s) return Object.assign({}, DEFAULTS, JSON.parse(s));
@@ -1144,6 +1158,25 @@ function cfgReset() {
   s.textContent = 'Reset to defaults!';
   s.style.display = 'block';
   setTimeout(() => { s.style.display = 'none'; s.textContent = 'Saved!'; }, 1500);
+}
+
+function copySlobsUrl() {
+  const base = window.location.origin + window.location.pathname.replace(/\/?$/, '/');
+  const params = new URLSearchParams();
+  if (cfg.clientId)     params.set('clientId', cfg.clientId);
+  if (cfg.oauthToken)   params.set('token', cfg.oauthToken);
+  if (cfg.channel)      params.set('channel', cfg.channel);
+  if (cfg.rewardFilter) params.set('reward', cfg.rewardFilter);
+  if (cfg.volume !== 0.7) params.set('volume', cfg.volume);
+  const url = base + '?' + params.toString();
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('cfg-copy-url');
+    btn.textContent = 'Copied!';
+    btn.style.color = '#5dca5d';
+    setTimeout(() => { btn.textContent = 'Copy SLOBS URL'; btn.style.color = 'var(--accent)'; }, 2000);
+  }).catch(() => {
+    prompt('Copy this URL into SLOBS browser source:', url);
+  });
 }
 
 function esc(s) { return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
