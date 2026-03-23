@@ -465,13 +465,40 @@ function loginWithTwitch() {
 }
 
 async function fetchTwitchUser(token, autoDownload) {
+  // Client ID: prefer what's typed in the box, fall back to saved state
+  const clientId = (document.getElementById('client-id-input').value || '').trim()
+                || state.clientId || '';
+
+  if (!clientId) {
+    toast('Please enter your Twitch App Client ID first');
+    document.getElementById('step1').classList.add('open');
+    document.getElementById('client-id-input').focus();
+    return;
+  }
+
+  toast('Fetching your Twitch account...');
+
   try {
-    const clientId = state.clientId || document.getElementById('client-id-input').value.trim();
     const res = await fetch('https://api.twitch.tv/helix/users', {
-      headers: { 'Authorization': 'Bearer ' + token, 'Client-Id': clientId }
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Client-Id': clientId
+      }
     });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      toast('Twitch API error ' + res.status + ': ' + errText.slice(0, 80));
+      return;
+    }
+
     const data = await res.json();
-    if (!data.data || !data.data[0]) throw new Error('No user data');
+
+    if (!data.data || !data.data[0]) {
+      toast('Twitch returned no user — token may be expired. Please reconnect.');
+      return;
+    }
+
     const user = data.data[0];
     state.accessToken = token;
     state.userId = user.id;
@@ -482,8 +509,8 @@ async function fetchTwitchUser(token, autoDownload) {
     save();
     showLoggedIn();
     markDone('step1');
+
     if (autoDownload) {
-      // Scroll to download card and highlight it
       const dl = document.getElementById('download-card');
       if (dl) {
         dl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -494,8 +521,9 @@ async function fetchTwitchUser(token, autoDownload) {
     } else {
       toast('Connected as ' + user.display_name);
     }
+
   } catch(e) {
-    toast('Could not fetch user info — check your Client ID is correct');
+    toast('Network error: ' + e.message + '. Check your internet connection.');
   }
 }
 
