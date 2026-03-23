@@ -233,7 +233,7 @@
       <div class="color-grid">
         <div class="cpick-row"><span class="cpick-label">Accent</span><input type="color" class="cpick" id="cp-accent" value="#9147ff" oninput="onColorChange('clrAccent',this.value);syncAccentLight(this.value);" onchange="save()"></div>
         <div class="cpick-row"><span class="cpick-label">Accent highlight</span><input type="color" class="cpick" id="cp-accentlight" value="#bf94ff" oninput="onColorChange('clrAccentLight',this.value)" onchange="save()"></div>
-        <div class="cpick-row"><span class="cpick-label">Card background</span><input type="color" class="cpick" id="cp-cardbg" value="#000000" oninput="onColorChange('clrCardBg',this.value)" onchange="save()"></div>
+        <div class="cpick-row"><span class="cpick-label">Card background</span><input type="color" class="cpick" id="cp-cardbg" value="#1a1025" oninput="onColorChange('clrCardBg',this.value)" onchange="save()"></div>
         <div class="cpick-row"><span class="cpick-label">Card border</span><input type="color" class="cpick" id="cp-cardborder" value="#9147ff" oninput="onColorChange('clrCardBorder',this.value)" onchange="save()"></div>
         <div class="cpick-row"><span class="cpick-label">Title text</span><input type="color" class="cpick" id="cp-title" value="#ffffff" oninput="onColorChange('clrTitle',this.value)" onchange="save()"></div>
         <div class="cpick-row"><span class="cpick-label">"Redeemed" label</span><input type="color" class="cpick" id="cp-subtext" value="#aaaaaa" oninput="onColorChange('clrSubtext',this.value)" onchange="save()"></div>
@@ -338,7 +338,7 @@ const state = {
   // granular colors
   clrAccent:     '#9147ff',  // icon bg, badge, border glow, progress bar, avatar border
   clrAccentLight:'#bf94ff',  // username, count, badge text
-  clrCardBg:     'transparent',  // popup background
+  clrCardBg:     '#1a1025',  // popup background
   clrCardBorder: '#9147ff',  // popup border
   clrTitle:      '#ffffff',  // reward title text
   clrSubtext:    '#aaaaaa',  // "redeemed" label
@@ -420,7 +420,7 @@ function syncAccentLight(hex) {
 function resetColors() {
   const defaults = {
     clrAccent:'#9147ff', clrAccentLight:'#bf94ff',
-    clrCardBg:'transparent', clrCardBorder:'#9147ff',
+    clrCardBg:'#1a1025', clrCardBorder:'#9147ff',
     clrTitle:'#ffffff', clrSubtext:'#aaaaaa',
     clrMsgBar:'#9147ff', clrProgressBg:'#9147ff',
   };
@@ -636,10 +636,10 @@ function playSound(){try{const ctx=_actxGet();[523.25,659.25,783.99].forEach((f,
 <html lang="en"><head><meta charset="UTF-8"><title>Twitch Redemption Overlay</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;background:transparent;}
+*{margin:0;padding:0;box-sizing:border-box;}
 html{background-color:transparent!important;}
 body{background-color:transparent!important;overflow:hidden;font-family:'Inter','Segoe UI',sans-serif;width:100vw;height:100vh;display:flex;${bodyPos};padding:24px;}
-#popup{position:relative;width:380px;background-color:\${cbg === 'transparent' ? 'transparent' : cbg};border:2px solid \${cbr};border-radius:16px;padding:20px 22px 18px;opacity:0;transform:translateX(40px) scale(0.96);pointer-events:none;}
+#popup{position:relative;width:380px;background-color:\${cbg};border:2px solid \${cbr};border-radius:16px;padding:20px 22px 18px;opacity:0;transform:translateX(40px) scale(0.96);pointer-events:none;}
 #popup.show{animation:si 0.45s cubic-bezier(0.22,1,0.36,1) forwards;}
 #popup.hide{animation:so 0.35s cubic-bezier(0.4,0,1,1) forwards;}
 @keyframes si{0%{opacity:0;transform:translateX(40px) scale(0.95)}100%{opacity:1;transform:translateX(0) scale(1)}}
