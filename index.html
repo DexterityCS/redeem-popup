@@ -405,9 +405,15 @@ html, body {
     </div>
   </div>
 
+  <div class="cfg-section">
+    <h2>SLOBS / OBS browser source URL</h2>
+    <p style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.6;">After connecting Twitch above, click the button below to copy a URL with all settings baked in. Paste it directly into your browser source — no further setup needed.</p>
+    <button id="cfg-copy-url" onclick="copySlobsUrl()" style="padding:10px 24px;font-size:12px;font-weight:900;font-family:'Orbitron',monospace;background:var(--accent2);color:#fff;border:none;border-radius:2px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;">Copy Browser Source URL</button>
+    <div id="cfg-url-out" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:8px;word-break:break-all;"></div>
+  </div>
+
   <div>
     <button id="cfg-save" onclick="cfgSave()">Save &amp; apply</button>
-    <button id="cfg-copy-url" onclick="copySlobsUrl()" style="padding:10px 20px;font-size:12px;font-family:'Share Tech Mono',monospace;background:transparent;border:1px solid var(--border);border-radius:2px;color:var(--accent);cursor:pointer;margin-right:8px;">Copy SLOBS URL</button>
     <button id="cfg-cancel" onclick="cfgClose()">Cancel</button>
     <button id="cfg-reset" onclick="cfgReset()" style="padding:10px 20px;font-size:12px;background:transparent;border:1px solid rgba(232,75,75,0.4);border-radius:2px;color:#e88888;cursor:pointer;font-family:'Share Tech Mono',monospace;margin-left:8px;">Reset to defaults</button>
     <div id="cfg-status">Saved!</div>
@@ -1169,13 +1175,14 @@ function copySlobsUrl() {
   if (cfg.rewardFilter) params.set('reward', cfg.rewardFilter);
   if (cfg.volume !== 0.7) params.set('volume', cfg.volume);
   const url = base + '?' + params.toString();
+  const out = document.getElementById('cfg-url-out');
+  if (out) out.textContent = url;
   navigator.clipboard.writeText(url).then(() => {
     const btn = document.getElementById('cfg-copy-url');
     btn.textContent = 'Copied!';
-    btn.style.color = '#5dca5d';
-    setTimeout(() => { btn.textContent = 'Copy SLOBS URL'; btn.style.color = 'var(--accent)'; }, 2000);
+    setTimeout(() => { btn.textContent = 'Copy Browser Source URL'; }, 2000);
   }).catch(() => {
-    prompt('Copy this URL into SLOBS browser source:', url);
+    prompt('Copy this URL into your browser source:', url);
   });
 }
 
