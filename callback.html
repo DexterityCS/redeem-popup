@@ -55,22 +55,18 @@
 
   document.getElementById('msg').textContent = 'Connected! Closing...';
 
-  // Method 1: postMessage to opener (popup flow)
-  var sent = false;
-  if (window.opener && !window.opener.closed) {
-    try {
-      window.opener.postMessage({ access_token: token }, 'https://dexteritycs.github.io');
-      sent = true;
-    } catch(e) {}
-  }
-
-  // Method 2: localStorage so opener can poll for it
+  // Always write to localStorage first — setup page polls this
   try { localStorage.setItem('oauth_token_pending', token); } catch(e) {}
 
-  if (sent) {
-    setTimeout(function() { window.close(); }, 600);
+  // Also try postMessage to opener
+  if (window.opener && !window.opener.closed) {
+    try {
+      window.opener.postMessage({ access_token: token }, '*');
+    } catch(e) {}
+    // Wait long enough for postMessage to land, then close
+    setTimeout(function() { window.close(); }, 1500);
   } else {
-    // Popup opener lost — redirect the whole window back to setup with token in hash
+    // No opener — redirect back to setup page with token in hash
     document.getElementById('msg').textContent = 'Redirecting back...';
     setTimeout(function() {
       window.location.replace('https://dexteritycs.github.io/redeem-popup/#access_token=' + token);
