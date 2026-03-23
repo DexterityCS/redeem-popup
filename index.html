@@ -1,478 +1,1230 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CS2 Challenge Wheel</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --cs-green: #4a5c3a; --cs-dark: #1a1f14; --cs-darker: #0d1009;
-    --cs-yellow: #e8b84b; --cs-red: #c0392b; --cs-blue: #2980b9;
-    --cs-light: #c8d4b8; --cs-gray: #3a4030;
-  }
-  html, body { width:100%; height:100%; background:transparent; overflow:hidden; }
-  #scene { position:fixed; inset:0; pointer-events:none; background:transparent; }
+/* ============================================================
+   CONFIGURATION — edit these to customize the wheel
+   ============================================================ */
+:root {
+  --wheel-size: 500px;        /* diameter of the wheel */
+  --accent: #e8b84b;          /* CS2 bomb yellow */
+  --accent2: #4b9fe8;         /* CT blue */
+  --danger: #e84b4b;          /* T red */
+  --bg-dark: #0a0c0a;         /* near-black tactical */
+  --bg-panel: rgba(8,12,8,0.92);
+  --border: rgba(232,184,75,0.35);
+  --text-dim: rgba(200,210,195,0.5);
+}
+/* ============================================================ */
 
-  #wheel-wrap {
-    position:absolute; width:480px; display:none; flex-direction:column;
-    align-items:center; cursor:grab; pointer-events:auto; user-select:none;
-    right:80px; top:50%; transform:translateY(-50%);
-  }
-  #wheel-wrap.visible { display:flex; }
-  #wheel-wrap:active { cursor:grabbing; }
-  .wheel-outer { position:relative; width:420px; height:420px; }
-  #wheel-canvas { width:420px; height:420px; border-radius:50%; display:block; background:transparent; }
-  .wheel-pointer {
-    position:absolute; top:-18px; left:50%; transform:translateX(-50%);
-    width:0; height:0; border-left:14px solid transparent;
-    border-right:14px solid transparent; border-top:32px solid var(--cs-yellow);
-    filter:drop-shadow(0 0 8px var(--cs-yellow)); z-index:10;
-  }
-  .wheel-hub {
-    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:60px; height:60px; border-radius:50%; background:var(--cs-darker);
-    border:3px solid var(--cs-yellow); display:flex; align-items:center;
-    justify-content:center; font-family:'Orbitron',monospace; font-size:10px;
-    font-weight:700; color:var(--cs-yellow); letter-spacing:1px; z-index:10;
-    transition:opacity 0.3s; text-align:center; line-height:1.1;
-  }
-  #spin-hub.hidden { opacity:0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  #result-card {
-    position:absolute; width:420px; display:none; flex-direction:column;
-    background:var(--cs-darker); border:2px solid var(--cs-yellow);
-    cursor:grab; pointer-events:auto; user-select:none; right:80px; top:40px;
-  }
-  #result-card.visible { display:flex; }
-  #result-card:active { cursor:grabbing; }
-  .result-header {
-    background:var(--cs-yellow); padding:10px 16px;
-    display:flex; align-items:center; justify-content:space-between;
-  }
-  .result-header-title { font-family:'Orbitron',monospace; font-size:12px; font-weight:900; color:var(--cs-darker); letter-spacing:2px; }
-  .result-countdown { font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--cs-darker); opacity:0.7; }
-  .result-body { padding:20px 24px; }
-  .result-winner { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--cs-blue); letter-spacing:1px; margin-bottom:6px; text-transform:uppercase; }
-  .result-challenge { font-family:'Orbitron',monospace; font-size:20px; font-weight:700; color:var(--cs-yellow); text-transform:uppercase; letter-spacing:1px; line-height:1.3; }
-  .result-dismiss {
-    background:none; border:1px solid var(--cs-yellow); color:var(--cs-yellow);
-    font-family:'Share Tech Mono',monospace; font-size:11px; padding:6px 16px;
-    cursor:pointer; margin:0 24px 16px auto; display:block; transition:background 0.2s;
-  }
-  .result-dismiss:hover { background:rgba(232,184,75,0.15); }
+html, body {
+  width: 100%; height: 100%;
+  background: transparent !important;
+  overflow: hidden;
+  font-family: 'Barlow Condensed', sans-serif;
+}
 
-  #config-overlay {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85);
-    z-index:1000; align-items:center; justify-content:center; pointer-events:auto;
-  }
-  #config-overlay.open { display:flex; }
-  #config-panel {
-    background:var(--cs-darker); border:2px solid var(--cs-yellow);
-    width:560px; max-height:85vh; overflow-y:auto; padding:28px;
-    font-family:'Share Tech Mono',monospace; color:var(--cs-light); position:relative;
-  }
-  .cfg-title { font-family:'Orbitron',monospace; font-size:18px; font-weight:900; color:var(--cs-yellow); letter-spacing:3px; margin-bottom:24px; text-align:center; }
-  .cfg-section { margin-bottom:20px; border:1px solid var(--cs-gray); padding:14px; }
-  .cfg-section-title { font-size:10px; color:var(--cs-yellow); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px; }
-  .cfg-field { margin-bottom:10px; }
-  .cfg-label { font-size:10px; color:#8a9a7a; letter-spacing:1px; display:block; margin-bottom:4px; }
-  .cfg-input { width:100%; background:var(--cs-dark); border:1px solid var(--cs-gray); color:var(--cs-light); font-family:'Share Tech Mono',monospace; font-size:13px; padding:7px 10px; outline:none; }
-  .cfg-input:focus { border-color:var(--cs-yellow); }
-  .cfg-item-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
-  .cfg-item-color { width:28px; height:28px; border:1px solid var(--cs-gray); cursor:pointer; padding:2px; background:var(--cs-dark); }
-  .cfg-item-name { flex:1; background:var(--cs-dark); border:1px solid var(--cs-gray); color:var(--cs-light); font-family:'Share Tech Mono',monospace; font-size:12px; padding:5px 8px; outline:none; }
-  .cfg-item-name:focus { border-color:var(--cs-yellow); }
-  .cfg-item-weight { width:44px; background:var(--cs-dark); border:1px solid var(--cs-gray); color:var(--cs-yellow); font-family:'Share Tech Mono',monospace; font-size:12px; padding:5px 6px; text-align:center; outline:none; }
-  .cfg-item-del { background:none; border:1px solid var(--cs-red); color:var(--cs-red); cursor:pointer; width:28px; height:28px; font-size:16px; line-height:1; }
-  .cfg-item-del:hover { background:rgba(192,57,43,0.2); }
-  .cfg-btn { background:none; border:1px solid var(--cs-yellow); color:var(--cs-yellow); font-family:'Share Tech Mono',monospace; font-size:11px; padding:7px 16px; cursor:pointer; letter-spacing:1px; transition:background 0.2s; }
-  .cfg-btn:hover { background:rgba(232,184,75,0.15); }
-  .cfg-btn.danger { border-color:var(--cs-red); color:var(--cs-red); }
-  .cfg-btn.danger:hover { background:rgba(192,57,43,0.2); }
-  .cfg-btn.success { border-color:#4caf50; color:#4caf50; }
-  .cfg-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-  .cfg-volume-row { display:flex; align-items:center; gap:10px; }
-  .cfg-volume-slider { flex:1; accent-color:var(--cs-yellow); }
-  .cfg-volume-val { font-size:12px; color:var(--cs-yellow); min-width:36px; }
-  .twitch-status { font-size:11px; margin-top:6px; padding:6px 10px; background:var(--cs-dark); border-left:3px solid var(--cs-gray); }
-  .twitch-status.ok { border-color:#4caf50; color:#4caf50; }
-  .twitch-status.err { border-color:var(--cs-red); color:var(--cs-red); }
-  .twitch-status.warn { border-color:var(--cs-yellow); color:var(--cs-yellow); }
+#scene {
+  width: 100vw; height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px;
+  position: relative;
+  background: transparent;
+}
+
+
+
+/* ---- Wheel ---- */
+#wheel-container {
+  position: relative;
+  width: var(--wheel-size);
+  height: var(--wheel-size);
+  flex-shrink: 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+#wheel-container.visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: all;
+}
+#wheel-container.hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#wheel-canvas {
+  border-radius: 50%;
+  display: block;
+  width: 100%; height: 100%;
+  filter: drop-shadow(0 0 20px rgba(232,184,75,0.3));
+  transition: filter 0.4s;
+}
+#wheel-canvas.spinning {
+  filter: drop-shadow(0 0 40px rgba(232,184,75,0.7));
+}
+
+/* Outer ring — segmented tactical look */
+#wheel-ring {
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(232,184,75,0.45);
+  pointer-events: none;
+}
+#wheel-ring::before {
+  content: '';
+  position: absolute; inset: 4px;
+  border-radius: 50%;
+  border: 1px solid rgba(232,184,75,0.15);
+}
+
+/* Center hub — bomb detonator style */
+#spin-hub {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  background: #0a0c0a;
+  border: 2px solid var(--accent);
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  transition: background 0.15s, transform 0.1s;
+  z-index: 10;
+}
+#spin-hub::before {
+  content: '';
+  position: absolute; inset: 4px;
+  border-radius: 50%;
+  border: 1px solid rgba(232,184,75,0.25);
+}
+#spin-hub:hover { background: #141a10; transform: translate(-50%,-50%) scale(1.07); }
+#spin-hub:active { transform: translate(-50%,-50%) scale(0.96); }
+#spin-hub.disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+#hub-label { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 900; letter-spacing: 2px; color: var(--accent); line-height: 1; position: relative; z-index: 1; }
+#hub-sub { font-family: 'Share Tech Mono', monospace; font-size: 8px; color: rgba(232,184,75,0.45); letter-spacing: 0.1em; position: relative; z-index: 1; }
+
+/* Pointer — angular tactical arrow */
+#pointer {
+  position: absolute;
+  right: -26px; top: 50%;
+  transform: translateY(-50%);
+  width: 0; height: 0;
+  border-top: 14px solid transparent;
+  border-bottom: 14px solid transparent;
+  border-right: 26px solid var(--accent);
+  filter: drop-shadow(0 0 8px rgba(232,184,75,0.8));
+}
+
+/* ---- Status bar — HUD style ---- */
+#status-bar {
+  display: none !important;
+  position: absolute;
+  top: 16px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 5px 14px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+#status-bar::before {
+  content: '//';
+  color: var(--accent);
+  font-size: 10px;
+}
+.s-dot { width: 7px; height: 7px; border-radius: 50%; background: #333; flex-shrink: 0; }
+.s-dot.live { background: #5dca5d; box-shadow: 0 0 6px #5dca5d; }
+.s-dot.err  { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+
+/* ---- Queue pill ---- */
+#queue-pill {
+  position: absolute;
+  bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 5px 16px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  display: none;
+}
+#queue-pill.show { display: block; }
+#queue-pill span { color: var(--accent); }
+
+/* ---- Result overlay — bomb detonation card ---- */
+#result-overlay {
+  display: flex;
+  align-items: center; justify-content: center;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s, visibility 0.3s;
+  width: 100%;
+}
+#result-overlay.show {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: all;
+}
+
+#result-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 0;
+  text-align: center;
+  width: 100%;
+  position: relative;
+  transform: scale(0.92);
+  transition: transform 0.3s cubic-bezier(0.34,1.46,0.64,1);
+  overflow: hidden;
+}
+#result-overlay.show #result-card { transform: scale(1); }
+
+/* Top bar on result card */
+#result-card::before {
+  content: '✷  CHALLENGE SELECTED  ✷';
+  display: block;
+  background: var(--accent);
+  color: #0a0c0a;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  padding: 6px 0;
+  text-align: center;
+}
+
+#result-card-inner { padding: 24px 40px 28px; }
+
+#res-user {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px; color: var(--accent2);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+#res-user::before { content: '> '; color: var(--accent); }
+
+#res-challenge {
+  font-family: 'Orbitron', monospace;
+  font-size: 26px; font-weight: 900;
+  letter-spacing: 1px; line-height: 1.2;
+  color: #fff;
+  margin-bottom: 8px;
+  word-break: break-word;
+  text-transform: uppercase;
+}
+
+#res-tagline {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; color: var(--text-dim);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+#res-close {
+  padding: 8px 28px; font-size: 11px; font-weight: 700;
+  font-family: 'Orbitron', monospace; letter-spacing: 2px;
+  background: transparent; border: 1px solid var(--accent);
+  border-radius: 2px; color: var(--accent);
+  cursor: pointer; text-transform: uppercase;
+  transition: background 0.15s;
+}
+#res-close:hover { background: rgba(232,184,75,0.12); }
+
+/* Flash animation on win */
+@keyframes cs-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+#result-overlay.show #result-card { animation: cs-flash 0.15s ease 2; }
+
+/* Confetti — square fragments instead of dots */
+.confetti-dot {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 1px;
+  animation: confetti-fall 1.6s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes confetti-fall {
+  0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translateY(90px) rotate(360deg) scale(0.1); opacity: 0; }
+}
+
+/* ---- Config panel ---- */
+#config-panel {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(5,8,5,0.98);
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 32px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+#config-panel.open { display: block; }
+#config-panel h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: 24px; font-weight: 900;
+  color: var(--accent); letter-spacing: 4px;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+#config-panel p.sub { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text-dim); margin-bottom: 24px; letter-spacing: 0.05em; }
+.cfg-section { margin-bottom: 24px; }
+.cfg-section h2 {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.15em;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+.cfg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.cfg-row label { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text-dim); width: 150px; flex-shrink: 0; letter-spacing: 0.06em; }
+.cfg-row input[type=text], .cfg-row input[type=number] {
+  flex: 1; padding: 7px 10px; font-size: 13px; font-family: 'Share Tech Mono', monospace;
+  background: rgba(232,184,75,0.04); border: 1px solid var(--border);
+  border-radius: 2px; color: #d4e8c8; outline: none; letter-spacing: 0.05em;
+}
+.cfg-row input:focus { border-color: var(--accent); }
+.cfg-row input[type=color] { width: 36px; height: 30px; padding: 2px; border-radius: 2px; border: 1px solid var(--border); background: transparent; cursor: pointer; }
+
+#items-cfg { display: flex; flex-direction: column; gap: 6px; }
+.cfg-item { display: flex; align-items: center; gap: 8px; }
+.cfg-item input[type=text] { flex: 1; padding: 6px 9px; font-size: 13px; font-family: 'Barlow Condensed', sans-serif; background: rgba(232,184,75,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 2px; color: #d4e8c8; outline: none; }
+.cfg-item input[type=color] { width: 32px; height: 28px; padding: 2px; border-radius: 2px; border: none; background: transparent; cursor: pointer; }
+.cfg-item input[type=number] { width: 52px; padding: 6px 6px; font-size: 13px; font-family: 'Share Tech Mono', monospace; background: rgba(232,184,75,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 2px; color: #d4e8c8; outline: none; text-align: center; }
+.cfg-item button { padding: 5px 10px; background: rgba(232,75,75,0.1); border: 1px solid rgba(232,75,75,0.3); border-radius: 2px; color: #e88888; font-size: 12px; cursor: pointer; font-family: 'Share Tech Mono', monospace; }
+.cfg-item button:hover { background: rgba(232,75,75,0.25); }
+
+#cfg-add-item { margin-top: 8px; padding: 7px 18px; font-size: 12px; font-weight: 700; background: transparent; border: 1px solid var(--border); border-radius: 2px; color: var(--accent); cursor: pointer; font-family: 'Share Tech Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; }
+#cfg-add-item:hover { background: rgba(232,184,75,0.08); }
+
+#cfg-save { padding: 10px 32px; font-size: 12px; font-weight: 900; font-family: 'Orbitron', monospace; letter-spacing: 3px; background: var(--accent); color: #0a0c0a; border: none; border-radius: 2px; cursor: pointer; margin-right: 10px; text-transform: uppercase; }
+#cfg-save:hover { background: #f5cc6a; }
+#cfg-cancel { padding: 10px 20px; font-size: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15); border-radius: 2px; color: var(--text-dim); cursor: pointer; font-family: 'Share Tech Mono', monospace; }
+#cfg-cancel:hover { border-color: rgba(255,255,255,0.3); }
+
+#cfg-status { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: #5dca5d; margin-top: 10px; display: none; letter-spacing: 0.1em; }
+#cfg-status::before { content: '// '; }
 </style>
 </head>
 <body>
+
+<!-- ============================================================
+     EASY CONFIG — Edit the JS block below to set your defaults
+     Or open this file with ?config=1 in the URL for a GUI
+     ============================================================ -->
+
 <div id="scene">
-  <div id="result-card">
-    <div class="result-header">
-      <span class="result-header-title">✷ CHALLENGE SELECTED ✷</span>
-      <span class="result-countdown" id="result-countdown"></span>
-    </div>
-    <div class="result-body">
-      <div class="result-winner" id="result-winner"></div>
-      <div class="result-challenge" id="result-text"></div>
-    </div>
-    <button class="result-dismiss" id="result-dismiss-btn">Confirm [ESC]</button>
+
   </div>
-  <div id="wheel-wrap">
-    <div class="wheel-outer">
-      <div class="wheel-pointer"></div>
-      <canvas id="wheel-canvas" width="420" height="420"></canvas>
-      <div class="wheel-hub" id="spin-hub">SPIN</div>
+
+  <div id="result-overlay">
+    <div id="result-card">
+      <div id="result-card-inner">
+        <div id="res-user"></div>
+        <div id="res-challenge"></div>
+        <div id="res-tagline">Execute this challenge</div>
+        <button id="res-close" onclick="closeResult()">Confirm [ESC]</button>
+      </div>
+      <div id="conf-container"></div>
     </div>
   </div>
+
+  <div id="wheel-container">
+    <canvas id="wheel-canvas" width="600" height="600"></canvas>
+    <div id="wheel-ring"></div>
+    <div id="pointer"></div>
+    <div id="spin-hub" onclick="manualSpin()">
+      <span id="hub-label">SPIN</span>
+      <span id="hub-sub">click</span>
+    </div>
+  </div>
+
+  <div id="queue-pill">Queue: <span id="q-count">0</span> waiting</div>
 </div>
 
-<div id="config-overlay">
-  <div id="config-panel">
-    <div class="cfg-title">// WHEEL CONFIG //</div>
-    <div class="cfg-section">
-      <div class="cfg-section-title">Twitch Integration</div>
-      <div class="cfg-field"><label class="cfg-label">Client ID (from dev.twitch.tv)</label><input class="cfg-input" id="cfg-clientid" placeholder="paste your Twitch app Client ID"></div>
-      <div class="cfg-field"><label class="cfg-label">Channel name</label><input class="cfg-input" id="cfg-channel" placeholder="auto-filled after connecting"></div>
-      <div class="cfg-field"><label class="cfg-label">Channel Points reward name</label><input class="cfg-input" id="cfg-reward" placeholder="e.g. Spin the Wheel (must match your reward name exactly)"></div>
-      <div class="cfg-row">
-        <button class="cfg-btn" id="twitch-connect-btn">Connect with Twitch</button>
-        <button class="cfg-btn danger" id="twitch-disconnect-btn" style="display:none;">Disconnect</button>
-      </div>
-      <div class="twitch-status" id="twitch-status-cfg">Not connected</div>
+<!-- Config Panel -->
+<div id="config-panel">
+  <h1>Wheel Config</h1>
+  <p class="sub">Changes are saved to localStorage and loaded automatically on next open.</p>
+
+  <div class="cfg-section">
+    <h2>Twitch connection</h2>
+    <div class="cfg-row"><label>Client ID</label><input type="text" id="cfg-clientid" placeholder="From dev.twitch.tv/console"/></div>
+    <div class="cfg-row"><label>Channel name</label><input type="text" id="cfg-channel" placeholder="yourchannelname"/></div>
+    <div class="cfg-row"><label>Channel Points reward name</label><input type="text" id="cfg-reward" placeholder="e.g. Spin the Wheel (must match your reward name exactly)"/></div>
+    <div class="cfg-row" style="gap:10px;">
+      <label>Twitch auth</label>
+      <button id="cfg-auth-btn" onclick="startTwitchAuth()" style="padding:7px 16px;font-size:12px;font-family:'Share Tech Mono',monospace;background:#9146ff;color:#fff;border:none;border-radius:2px;cursor:pointer;letter-spacing:0.05em;">Connect with Twitch</button>
+      <button id="cfg-disconnect-btn" onclick="disconnectTwitch()" style="padding:7px 16px;font-size:12px;font-family:'Share Tech Mono',monospace;background:transparent;color:#e88888;border:1px solid rgba(232,75,75,0.4);border-radius:2px;cursor:pointer;letter-spacing:0.05em;display:none;">Disconnect</button>
+      <span id="cfg-auth-status" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);"></span>
     </div>
-    <div class="cfg-section">
-      <div class="cfg-section-title">Sound Effects</div>
-      <div class="cfg-field"><label class="cfg-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="cfg-sound" checked style="accent-color:var(--cs-yellow);"> Enable sound</label></div>
-      <div class="cfg-field"><label class="cfg-label">Volume</label><div class="cfg-volume-row"><input type="range" min="0" max="100" value="70" class="cfg-volume-slider" id="cfg-volume"><span class="cfg-volume-val" id="cfg-volume-val">70%</span></div></div>
+  </div>
+
+  <div class="cfg-section">
+    <h2>Challenges <span style="font-size:11px;color:rgba(255,255,255,0.3);font-weight:400;">(weight = how likely to land, 1–9)</span></h2>
+    <div id="items-cfg"></div>
+    <button id="cfg-add-item" onclick="cfgAddItem()">+ Add challenge</button>
+  </div>
+
+  <div class="cfg-section">
+    <h2>Sound</h2>
+    <div class="cfg-row"><label>Sound effects</label><input type="text" id="cfg-sound" placeholder="on or off"/></div>
+    <div class="cfg-row">
+      <label>Volume</label>
+      <input type="range" id="cfg-volume" min="0" max="100" step="1" value="70" style="flex:1;" oninput="document.getElementById('cfg-vol-out').textContent=this.value+'%'"/>
+      <span id="cfg-vol-out" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent);min-width:36px;text-align:right;">70%</span>
     </div>
-    <div class="cfg-section">
-      <div class="cfg-section-title">Challenges</div>
-      <div id="cfg-items-list"></div>
-      <div class="cfg-row" style="margin-top:10px;">
-        <button class="cfg-btn" id="cfg-add-item">+ Add challenge</button>
-        <button class="cfg-btn danger" id="cfg-reset-defaults">Reset to defaults</button>
-      </div>
-    </div>
-    <div class="cfg-row" style="justify-content:center;margin-top:16px;">
-      <button class="cfg-btn" id="cfg-save-btn" style="font-size:13px;padding:10px 32px;">Save &amp; apply</button>
-      <button class="cfg-btn danger" id="cfg-cancel-btn">Cancel</button>
-    </div>
+  </div>
+
+  <div>
+    <button id="cfg-save" onclick="cfgSave()">Save &amp; apply</button>
+    <button id="cfg-cancel" onclick="cfgClose()">Cancel</button>
+    <button id="cfg-reset" onclick="cfgReset()" style="padding:10px 20px;font-size:12px;background:transparent;border:1px solid rgba(232,75,75,0.4);border-radius:2px;color:#e88888;cursor:pointer;font-family:'Share Tech Mono',monospace;margin-left:8px;">Reset to defaults</button>
+    <div id="cfg-status">Saved!</div>
   </div>
 </div>
 
 <script>
+// ============================================================
+// DEFAULT CONFIG — edit here OR use ?config=1 in the browser
+// ============================================================
 const DEFAULTS = {
-  clientId:'', channel:'', rewardFilter:'', soundEnabled:true, volume:70,
-  items:[
-    {label:'One eye closed',    color:'#2d3a22',weight:1},
-    {label:'Switch mouse hands',color:'#3a4a2a',weight:1},
-    {label:'Sound off',         color:'#4a5c3a',weight:1},
-    {label:'Throw weapons',     color:'#556840',weight:1},
-    {label:'CHARGE!!!!',        color:'#3d4e2d',weight:1},
-    {label:'Forget the W',      color:'#4f6237',weight:1},
-    {label:'Only walk',         color:'#38492a',weight:1},
-    {label:'Only crouch',       color:'#516040',weight:1},
-    {label:'Pick a corner',     color:'#435535',weight:1},
+  channel: '',           // your Twitch channel name (lowercase)
+  rewardFilter: '',      // reward title to listen for (blank = any)
+  clientId: '',          // Twitch app Client ID from dev.twitch.tv
+  oauthToken: '',        // auto-filled after connecting with Twitch
+  soundEnabled: true,
+  volume: 0.7,          // 0.0 to 1.0
+  items: [
+    { label: 'One eye closed',   color: '#1a2f4a', weight: 1 },
+    { label: 'Switch mouse hands', color: '#1a4a1a', weight: 1 },
+    { label: 'Sound off',        color: '#1a3a2a', weight: 1 },
+    { label: 'Throw weapons',    color: '#3a2a10', weight: 1 },
+    { label: 'CHARGE!!!!',       color: '#4a1a1a', weight: 1 },
+    { label: 'Forget the W',     color: '#2a1a3a', weight: 1 },
+    { label: 'Only walk',        color: '#4a2a10', weight: 1 },
+    { label: 'Only crouch',      color: '#101a4a', weight: 1 },
+    { label: 'Pick a corner',    color: '#1a4a3a', weight: 1 },
   ]
 };
+// ============================================================
 
-let cfg=loadCfg(), spinning=false, currentAngle=0, spinQueue=[], dismissInterval=null;
+let cfg = loadCfg();
+let angle = 0;
+let velocity = 0;
+let spinning = false;
+let raf = null;
+let queue = [];
+let ws = null;
+let eventsubSessionId = null;
+let twitchUserId = null;
 
-function loadCfg(){try{const s=localStorage.getItem('wheelCfg');if(s)return{...DEFAULTS,...JSON.parse(s)};}catch(e){}return{...DEFAULTS,items:DEFAULTS.items.map(i=>({...i}))}}
-function saveCfg(){localStorage.setItem('wheelCfg',JSON.stringify(cfg));}
-
-const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-let masterGain;
-function ensureAudio(){if(!masterGain){masterGain=audioCtx.createGain();masterGain.gain.value=cfg.volume/100;masterGain.connect(audioCtx.destination);}}
-function playTick(){
-  if(!cfg.soundEnabled)return; ensureAudio();
-  const t=audioCtx.currentTime;
-  [0,0.075].forEach(off=>{
-    const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();
-    f.type='bandpass';f.frequency.value=1080;f.Q.value=3;
-    o.type='sine';o.frequency.setValueAtTime(1080,t+off);o.frequency.linearRampToValueAtTime(980,t+off+0.05);
-    g.gain.setValueAtTime(0,t+off);g.gain.linearRampToValueAtTime(0.5*(cfg.volume/100),t+off+0.004);
-    g.gain.exponentialRampToValueAtTime(0.001,t+off+0.12);
-    o.connect(f);f.connect(g);g.connect(audioCtx.destination);
-    o.start(t+off);o.stop(t+off+0.13);
-  });
-}
-function playWin(){
-  if(!cfg.soundEnabled)return; ensureAudio();
-  const t=audioCtx.currentTime;
-  [0,0.15,0.3,0.5].forEach((off,i)=>{
-    const freqs=[880,1108,1318,1760];
-    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-    o.type='sine';o.frequency.value=freqs[i];
-    g.gain.setValueAtTime(0,t+off);g.gain.linearRampToValueAtTime(0.3*(cfg.volume/100),t+off+0.01);
-    g.gain.exponentialRampToValueAtTime(0.001,t+off+0.35);
-    o.connect(g);g.connect(audioCtx.destination);o.start(t+off);o.stop(t+off+0.4);
-  });
+function loadCfg() {
+  try {
+    const s = localStorage.getItem('wheelCfg');
+    if (s) return Object.assign({}, DEFAULTS, JSON.parse(s));
+  } catch(e) {}
+  return Object.assign({}, DEFAULTS);
 }
 
-const canvas=document.getElementById('wheel-canvas'),ctx2=canvas.getContext('2d');
-const W=420,CX=W/2,CY=W/2,R=W/2-8;
-
-function buildSlices(){const s=[];cfg.items.forEach(i=>{for(let w=0;w<i.weight;w++)s.push(i);});return s;}
-
-function drawWheel(angle){
-  const slices=buildSlices(),n=slices.length,arc=(2*Math.PI)/n;
-  ctx2.clearRect(0,0,W,W);
-  ctx2.beginPath();ctx2.arc(CX,CY,R+6,0,2*Math.PI);ctx2.strokeStyle='#e8b84b';ctx2.lineWidth=3;ctx2.stroke();
-  ctx2.beginPath();ctx2.arc(CX,CY,R+10,0,2*Math.PI);ctx2.strokeStyle='#3a4030';ctx2.lineWidth=2;ctx2.stroke();
-  slices.forEach((slice,i)=>{
-    const s=angle+i*arc,e=s+arc;
-    ctx2.beginPath();ctx2.moveTo(CX,CY);ctx2.arc(CX,CY,R,s,e);ctx2.closePath();
-    ctx2.fillStyle=slice.color;ctx2.fill();ctx2.strokeStyle='#1a1f14';ctx2.lineWidth=1.5;ctx2.stroke();
-    ctx2.save();ctx2.translate(CX,CY);ctx2.rotate(s+arc/2);ctx2.textAlign='right';
-    ctx2.fillStyle='#e8c87a';ctx2.font=`bold ${n>10?11:13}px 'Barlow Condensed',sans-serif`;
-    ctx2.shadowColor='#000';ctx2.shadowBlur=4;
-    let lbl=slice.label.length>16?slice.label.slice(0,15)+'…':slice.label;
-    ctx2.fillText(lbl,R-12,5);ctx2.restore();
-  });
+function saveCfg() {
+  localStorage.setItem('wheelCfg', JSON.stringify(cfg));
 }
 
-function doSpin(redeemerName){
-  if(spinning){spinQueue.push(redeemerName);return;}
-  spinning=true;
-  const wrap=document.getElementById('wheel-wrap');
-  wrap.classList.add('visible');
-  // Force layout then redraw so canvas has real dimensions
-  wrap.getBoundingClientRect();
-  drawWheel(currentAngle);
+// ---- Canvas drawing ----
+const cvs = document.getElementById('wheel-canvas');
+const ctx = cvs.getContext('2d');
+const SIZE = 600;
 
-  const slices=buildSlices(),n=slices.length,arc=(2*Math.PI)/n;
-  const winIdx=Math.floor(Math.random()*n),winner=slices[winIdx];
-  const profiles=[
-    {minR:3,maxR:5,minD:3500,maxD:4500},{minR:5,maxR:8,minD:5000,maxD:6500},
-    {minR:7,maxR:10,minD:6500,maxD:8000},{minR:10,maxR:14,minD:8000,maxD:10000}
-  ];
-  const p=profiles[Math.floor(Math.random()*profiles.length)];
-  const extraRot=p.minR+Math.random()*(p.maxR-p.minR);
-  const duration=p.minD+Math.random()*(p.maxD-p.minD);
-  const sliceCenter=winIdx*arc+arc/2;
-  const targetAngle=(2*Math.PI*extraRot)-sliceCenter+(Math.PI*1.5);
-  const startAngle=currentAngle;
-  const totalDelta=targetAngle-(startAngle%(2*Math.PI));
-  const finalAngle=startAngle+totalDelta+Math.floor(extraRot)*2*Math.PI;
-  const startTime=performance.now();
-  let lastSliceIdx=-1;
-  function easeOut(t){return 1-Math.pow(1-t,3);}
-  function animate(now){
-    const elapsed=now-startTime,t=Math.min(elapsed/duration,1),ease=easeOut(t);
-    currentAngle=startAngle+(finalAngle-startAngle)*ease;
-    const si=Math.floor(((currentAngle%(2*Math.PI))+2*Math.PI)%(2*Math.PI)/arc);
-    if(si!==lastSliceIdx){playTick();lastSliceIdx=si;}
-    drawWheel(currentAngle);
-    if(t<1){requestAnimationFrame(animate);}
-    else{
-      currentAngle=finalAngle;drawWheel(currentAngle);
-      document.getElementById('spin-hub').classList.add('hidden');
-      spinning=false;playWin();
-      const delay=5000+Math.random()*5000;
-      setTimeout(()=>showResult(winner,redeemerName),delay);
+function totalWeight() {
+  return cfg.items.reduce((s, i) => s + (i.weight || 1), 0);
+}
+
+function drawWheel() {
+  const items = cfg.items;
+  const n = items.length;
+  const cx = SIZE / 2, cy = SIZE / 2, r = SIZE / 2 - 4;
+  ctx.clearRect(0, 0, SIZE, SIZE);
+
+  if (!n) return;
+
+  const tw = totalWeight();
+  let cur = angle;
+
+  for (let i = 0; i < n; i++) {
+    const arc = ((items[i].weight || 1) / tw) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, cur, cur + arc);
+    ctx.closePath();
+    ctx.fillStyle = items[i].color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(232,184,75,0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Label
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(cur + arc / 2);
+    ctx.textAlign = 'right';
+    const fz = n > 12 ? 11 : n > 8 ? 13 : 15;
+    ctx.font = `700 ${fz}px 'Barlow Condensed', sans-serif`;
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur = 4;
+    let lbl = items[i].label;
+    if (lbl.length > 18) lbl = lbl.slice(0, 17) + '…';
+    ctx.fillText(lbl, r - 14, fz / 3);
+    ctx.restore();
+
+    cur += arc;
+  }
+
+  // Outer rim
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(232,184,75,0.6)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+}
+
+function getWinner() {
+  const items = cfg.items;
+  const n = items.length;
+  if (!n) return null;
+  const tw = totalWeight();
+  const norm = (((-angle) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const frac = norm / (2 * Math.PI);
+  let acc = 0;
+  for (let i = 0; i < n; i++) {
+    acc += (items[i].weight || 1) / tw;
+    if (frac < acc) return items[i];
+  }
+  return items[n - 1];
+}
+
+// ---- Spin logic ----
+function doSpin(redeemer) {
+  if (spinning || cfg.items.length < 2) return;
+  spinning = true;
+  const hub = document.getElementById('spin-hub');
+  hub.classList.add('disabled');
+  document.getElementById('wheel-canvas').classList.add('spinning');
+  const wc = document.getElementById('wheel-container');
+  wc.classList.remove('hidden');
+  wc.classList.add('visible');
+  // Force redraw now that container is visible and has dimensions
+  requestAnimationFrame(() => drawWheel());
+  // Pick winner upfront so we can aim the wheel exactly at its slice
+  const items = cfg.items;
+  const tw = totalWeight();
+  let roll = Math.random() * tw, acc = 0, winnerIdx = items.length - 1;
+  for (let i = 0; i < items.length; i++) {
+    acc += (items[i].weight || 1);
+    if (roll < acc) { winnerIdx = i; break; }
+  }
+
+  // Find angular position of the winning slice
+  let sliceStart = 0;
+  for (let i = 0; i < winnerIdx; i++) sliceStart += ((items[i].weight||1)/tw) * 2 * Math.PI;
+  const sliceArc = ((items[winnerIdx].weight||1)/tw) * 2 * Math.PI;
+  // Land randomly within middle 60% of slice so it never sits right on an edge
+  const landOffset = sliceArc * (0.2 + Math.random() * 0.6);
+  const sliceMid = sliceStart + landOffset;
+
+  // Random spin profile: determines rotations and duration
+  const spinProfile = Math.random();
+  const minRotations = spinProfile < 0.25 ? 3 + Math.floor(Math.random()*2)
+                     : spinProfile < 0.6  ? 5 + Math.floor(Math.random()*3)
+                     : spinProfile < 0.85 ? 7 + Math.floor(Math.random()*3)
+                     :                     10 + Math.floor(Math.random()*3);
+
+  // Solve for target: pointer reads at (-angle mod 2π) = sliceMid
+  const currentNorm = ((-angle) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+  let delta = sliceMid - currentNorm;
+  if (delta <= 0) delta += 2*Math.PI;
+  const targetAngle = angle - delta - minRotations * 2 * Math.PI;
+
+  const duration = spinProfile < 0.25 ? 3500 + Math.random()*1000
+                 : spinProfile < 0.6  ? 5000 + Math.random()*1500
+                 : spinProfile < 0.85 ? 6500 + Math.random()*1500
+                 :                      8500 + Math.random()*1500;
+
+  const startAngle = angle;
+  const startTime = performance.now();
+  let flutterDone = false;
+
+  function easeOut(t) {
+    // Cubic ease-out with optional subtle flutter near the end
+    if (!flutterDone && t > 0.85 && t < 0.93 && Math.random() < 0.003) flutterDone = true;
+    if (flutterDone && t > 0.85 && t < 0.93) {
+      const sub = (t - 0.85) / 0.08;
+      return 1 - Math.pow(1 - t, 3) - Math.sin(sub * Math.PI) * 0.007;
+    }
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  // Track which slice the pointer is currently in to fire ticks on boundary crossings
+  function getSliceIdx(a) {
+    const tw2 = totalWeight();
+    const norm = (((-a) % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+    const frac = norm / (2*Math.PI);
+    let acc = 0;
+    for (let i = 0; i < items.length; i++) {
+      acc += (items[i].weight||1) / tw2;
+      if (frac < acc) return i;
+    }
+    return items.length - 1;
+  }
+
+  let lastSliceIdx = getSliceIdx(angle);
+
+  function frame(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    angle = startAngle + (targetAngle - startAngle) * easeOut(t);
+    drawWheel();
+
+    // Tick once every time the pointer crosses into a new slice
+    const currentSliceIdx = getSliceIdx(angle);
+    if (currentSliceIdx !== lastSliceIdx) {
+      if (cfg.soundEnabled) playTick();
+      lastSliceIdx = currentSliceIdx;
+    }
+
+    if (t < 1) {
+      raf = requestAnimationFrame(frame);
+    } else {
+      angle = targetAngle;
+      drawWheel();
+      spinning = false;
+      hub.classList.remove('disabled');
+      document.getElementById('wheel-canvas').classList.remove('spinning');
+      if (cfg.soundEnabled) playWin();
+      showResult(items[winnerIdx], redeemer);
+      processQueue();
     }
   }
-  requestAnimationFrame(animate);
+  raf = requestAnimationFrame(frame);
 }
 
-function showResult(winner,redeemerName){
-  const card=document.getElementById('result-card');
-  document.getElementById('result-text').textContent=winner.label;
-  document.getElementById('result-winner').textContent=redeemerName?`// REDEEMED BY: ${redeemerName.toUpperCase()} //`:'';
-  card.classList.add('visible');
-  setTimeout(()=>document.getElementById('wheel-wrap').classList.remove('visible'),1000);
-  let secsLeft=Math.round(5+Math.random()*5);
-  function upd(){
-    document.getElementById('result-dismiss-btn').textContent=`Confirm [ESC] (${secsLeft}s)`;
-    document.getElementById('result-countdown').textContent=`${secsLeft}s`;
+function manualSpin() {
+  if (spinning) return;
+  doSpin(null);
+}
+
+// ---- Queue ----
+let lastRedemptionTime = 0;
+function enqueue(user) {
+  // Debounce — ignore duplicate events within 3 seconds
+  const now = Date.now();
+  if (now - lastRedemptionTime < 3000) {
+    console.log('[Wheel] Debounced duplicate redemption from', user);
+    return;
   }
-  upd();
-  dismissInterval=setInterval(()=>{secsLeft--;upd();if(secsLeft<=0)closeResult();},1000);
+  lastRedemptionTime = now;
+  if (!spinning) {
+    doSpin(user);
+  } else {
+    queue.push(user);
+    updateQueuePill();
+  }
 }
 
-function closeResult(){
-  clearInterval(dismissInterval);dismissInterval=null;
-  document.getElementById('result-card').classList.remove('visible');
-  document.getElementById('spin-hub').classList.remove('hidden');
-  drawWheel(currentAngle);
-  if(spinQueue.length>0){const next=spinQueue.shift();setTimeout(()=>doSpin(next),800);}
+function processQueue() {
+  updateQueuePill();
+  if (queue.length > 0 && !spinning) {
+    const next = queue.shift();
+    updateQueuePill();
+    setTimeout(() => doSpin(next), 1000);
+  }
 }
 
-function makeDraggable(el){
-  let sx,sy,sl,st;
-  el.addEventListener('mousedown',e=>{
-    if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT')return;
-    e.preventDefault();
-    const r=el.getBoundingClientRect();
-    sx=e.clientX;sy=e.clientY;sl=r.left;st=r.top;
-    el.style.right='auto';el.style.left=sl+'px';el.style.top=st+'px';el.style.transform='none';
-    function mv(e){el.style.left=(sl+e.clientX-sx)+'px';el.style.top=(st+e.clientY-sy)+'px';}
-    function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);}
-    document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+function updateQueuePill() {
+  const pill = document.getElementById('queue-pill');
+  if (queue.length > 0) {
+    pill.classList.add('show');
+    document.getElementById('q-count').textContent = queue.length;
+  } else {
+    pill.classList.remove('show');
+  }
+}
+
+// ---- Result overlay ----
+let autoCloseTimer = null;
+
+function showResult(item, user) {
+  document.getElementById('res-user').textContent = user ? user + ' redeemed:' : 'Challenge!';
+  document.getElementById('res-challenge').textContent = item.label;
+  document.getElementById('res-challenge').style.color = item.color;
+  document.getElementById('result-overlay').classList.add('show');
+  document.getElementById('spin-hub').style.display = 'none';
+  spawnConfetti(item.color);
+  startAutoClose();
+  setTimeout(() => document.getElementById('wheel-container').classList.add('hidden'), 1000);
+}
+
+function startAutoClose() {
+  clearTimeout(autoCloseTimer);
+  let remaining = 5 + Math.floor(Math.random() * 6);
+  const btn = document.getElementById('res-close');
+  btn.textContent = `Confirm [ESC] (${remaining}s)`;
+  const tick = setInterval(() => {
+    remaining--;
+    if (remaining > 0) {
+      btn.textContent = `Confirm [ESC] (${remaining}s)`;
+    } else {
+      clearInterval(tick);
+      closeResult();
+    }
+  }, 1000);
+  autoCloseTimer = tick;
+}
+
+function closeResult() {
+  clearTimeout(autoCloseTimer);
+  document.getElementById('result-overlay').classList.remove('show');
+  document.getElementById('conf-container').innerHTML = '';
+  document.getElementById('res-close').textContent = 'Confirm [ESC]';
+  document.getElementById('spin-hub').style.display = '';
+  const wc = document.getElementById('wheel-container');
+  wc.classList.remove('visible');
+  wc.classList.add('hidden');
+}
+
+function spawnConfetti(baseColor) {
+  const container = document.getElementById('conf-container');
+  container.innerHTML = '';
+  const colors = [baseColor, '#e8b84b', '#4b9fe8', '#fff', '#e84b4b', '#5dca5d'];
+  for (let i = 0; i < 18; i++) {
+    const d = document.createElement('div');
+    d.className = 'confetti-dot';
+    d.style.cssText = `
+      left: ${Math.random() * 100}%;
+      top: ${-10 + Math.random() * 20}px;
+      background: ${colors[i % colors.length]};
+      width: ${5 + Math.random() * 8}px;
+      height: ${5 + Math.random() * 8}px;
+      animation-delay: ${Math.random() * 0.5}s;
+      animation-duration: ${1.2 + Math.random() * 0.6}s;
+    `;
+    container.appendChild(d);
+  }
+}
+
+// ---- Audio ----
+let audioCtx = null;
+let masterGain = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = cfg.volume ?? 0.7;
+    masterGain.connect(audioCtx.destination);
+  }
+  return audioCtx;
+}
+function getMaster() {
+  getAudioCtx();
+  return masterGain;
+}
+
+function playTick() {
+  try {
+    const ac = getAudioCtx();
+    const t = ac.currentTime;
+
+    // CS2 bomb beep approximation:
+    // Two rapid chirps ~80ms apart, each a short sine blip around 1050Hz
+    // with a tiny frequency drop (pitch bends down slightly on each chirp)
+    function chirp(offset) {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      const filter = ac.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1050;
+      filter.Q.value = 8;
+      o.type = 'sine';
+      o.frequency.setValueAtTime(1080, t + offset);
+      o.frequency.exponentialRampToValueAtTime(980, t + offset + 0.045);
+      o.connect(filter); filter.connect(g); g.connect(getMaster());
+      g.gain.setValueAtTime(0, t + offset);
+      g.gain.linearRampToValueAtTime(0.28, t + offset + 0.003);
+      g.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.055);
+      o.start(t + offset);
+      o.stop(t + offset + 0.06);
+    }
+
+    chirp(0);
+    chirp(0.075);
+  } catch(e) {}
+}
+
+function playWin() {
+  try {
+    const ac = getAudioCtx();
+    [523, 659, 784, 1047, 1319].forEach((f, i) => {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.connect(g); g.connect(getMaster());
+      o.frequency.value = f; o.type = 'triangle';
+      const t = ac.currentTime + i * 0.1;
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.start(t); o.stop(t + 0.3);
+    });
+  } catch(e) {}
+}
+
+// ---- Twitch OAuth ----
+function startTwitchAuth() {
+  const clientId = document.getElementById('cfg-clientid').value.trim() || cfg.clientId;
+  if (!clientId) { alert('Enter your Client ID first.'); return; }
+  cfg.clientId = clientId;
+  cfg.oauthToken = '';
+  saveCfg();
+  const scopes = 'channel:read:redemptions channel:manage:redemptions user:read:email';
+  const redirectUri = window.location.origin + window.location.pathname.replace(/\/?$/, '/');
+  const url = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scopes)}&force_verify=true`;
+  const popup = window.open(url, 'twitch-auth', 'width=500,height=750,left=200,top=100');
+  document.getElementById('cfg-auth-status').textContent = 'Waiting for Twitch login...';
+  let handled = false;
+  const poll = setInterval(() => {
+    if (handled) return;
+    try {
+      const hash = popup.location.hash;
+      if (hash && hash.includes('access_token')) {
+        handled = true;
+        clearInterval(poll);
+        const token = new URLSearchParams(hash.replace('#', '?')).get('access_token');
+        popup.close();
+        onTokenReceived(token);
+      }
+    } catch(e) {}
+    try {
+      if (!popup || popup.closed) {
+        clearInterval(poll);
+        if (!handled) {
+          // Popup closed without us catching the hash — check localStorage
+          const saved = JSON.parse(localStorage.getItem('wheelCfg') || '{}');
+          if (saved.oauthToken && saved.oauthToken !== cfg.oauthToken) {
+            handled = true;
+            onTokenReceived(saved.oauthToken);
+          } else {
+            document.getElementById('cfg-auth-status').textContent = 'Cancelled.';
+          }
+        }
+      }
+    } catch(e) {}
+  }, 300);
+}
+
+function onTokenReceived(token) {
+  cfg.oauthToken = token;
+  saveCfg();
+  fetch('https://id.twitch.tv/oauth2/validate', {
+    headers: { 'Authorization': 'OAuth ' + token }
+  }).then(r => r.json()).then(data => {
+    if (data.login) {
+      cfg.channel = data.login;
+      saveCfg();
+      document.getElementById('cfg-channel').value = data.login;
+      document.getElementById('cfg-auth-status').textContent = 'Connected as ' + data.login;
+    } else {
+      document.getElementById('cfg-auth-status').textContent = 'Authorised!';
+    }
+    document.getElementById('cfg-auth-btn').textContent = 'Re-connect Twitch';
+    document.getElementById('cfg-auth-btn').style.background = '#1e9e75';
+    document.getElementById('cfg-disconnect-btn').style.display = 'inline-block';
+    connectTwitch();
+  }).catch(() => {
+    document.getElementById('cfg-auth-status').textContent = 'Authorised!';
+    document.getElementById('cfg-auth-btn').textContent = 'Re-connect Twitch';
+    document.getElementById('cfg-auth-btn').style.background = '#1e9e75';
+    document.getElementById('cfg-disconnect-btn').style.display = 'inline-block';
+    connectTwitch();
   });
 }
-makeDraggable(document.getElementById('wheel-wrap'));
-makeDraggable(document.getElementById('result-card'));
 
-document.addEventListener('keydown',e=>{
-  const cfgOpen=document.getElementById('config-overlay').classList.contains('open');
-  const typing=e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable;
-  if(cfgOpen||typing)return;
-  if(e.key==='s'||e.key==='S')doSpin('');
-  if(e.key==='c'||e.key==='C')openConfig();
-  if(e.key==='Escape')closeResult();
-});
-document.getElementById('result-dismiss-btn').addEventListener('click',closeResult);
+// ---- Twitch EventSub WebSocket ----
+function connectTwitch() {
+  if (!cfg.oauthToken || !cfg.clientId) {
+    console.log('[Wheel] Missing token or clientId');
+    return;
+  }
+  if (ws) { ws.onclose = null; ws.onerror = null; ws.close(); ws = null; }
+  console.log('[Wheel] Connecting to EventSub...');
+  openEventSubSocket();
+}
 
-let ws=null,wsIntentionalClose=false,reconnectTimer=null;
-function setStatusCfg(msg,type=''){const el=document.getElementById('twitch-status-cfg');if(!el)return;el.textContent=msg;el.className='twitch-status'+(type?' '+type:'');}
+function openEventSubSocket(url) {
+  ws = new WebSocket(url || 'wss://eventsub.wss.twitch.tv/ws');
 
-function connectTwitch(){
-  if(!cfg.clientId||!cfg.oauthToken)return;
-  if(ws){wsIntentionalClose=true;ws.close();ws=null;}
-  clearTimeout(reconnectTimer);
-  ws=new WebSocket('wss://eventsub.wss.twitch.tv/ws');
-  wsIntentionalClose=false;
-  ws.onopen=()=>setStatusCfg('Connecting to EventSub...','warn');
-  ws.onmessage=async(event)=>{
-    const msg=JSON.parse(event.data),type=msg.metadata?.message_type;
-    if(type==='session_welcome'){
-      const sessionId=msg.payload.session.id;
-      try{
-        const res=await fetch(`https://api.twitch.tv/helix/users?login=${cfg.channel}`,{headers:{'Authorization':`Bearer ${cfg.oauthToken}`,'Client-Id':cfg.clientId}});
-        const data=await res.json();
-        if(!data.data?.[0]){setStatusCfg('Channel not found','err');return;}
-        const userId=data.data[0].id;
-        const subRes=await fetch('https://api.twitch.tv/helix/eventsub/subscriptions',{
-          method:'POST',
-          headers:{'Authorization':`Bearer ${cfg.oauthToken}`,'Client-Id':cfg.clientId,'Content-Type':'application/json'},
-          body:JSON.stringify({type:'channel.channel_points_custom_reward_redemption.add',version:'1',condition:{broadcaster_user_id:userId},transport:{method:'websocket',session_id:sessionId}})
-        });
-        const subData=await subRes.json();
-        if(subRes.ok)setStatusCfg(`Connected · #${cfg.channel}`,'ok');
-        else setStatusCfg(`EventSub error: ${subData.message}`,'err');
-      }catch(e){setStatusCfg('Connection error','err');}
-    }
-    if(type==='notification'){
-      const evt=msg.payload?.event;if(!evt)return;
-      const rt=(evt.reward?.title||evt.reward_title||'').toLowerCase();
-      const f=(cfg.rewardFilter||'').toLowerCase().trim();
-      if(!f||rt.includes(f)||f.includes(rt))doSpin(evt.user_name||evt.user_login||'');
+  ws.onmessage = async e => {
+    try {
+      const msg = JSON.parse(e.data);
+      const type = msg.metadata?.message_type;
+      console.log('[Wheel] WS message type:', type);
+      window._debug('WS msg: ' + type);
+
+      if (type === 'session_welcome') {
+        eventsubSessionId = msg.payload.session.id;
+        console.log('[Wheel] Session ID:', eventsubSessionId);
+        window._debug('Session: ' + eventsubSessionId);
+        await resolveUserId();
+      }
+
+      if (type === 'session_reconnect') {
+        console.log('[Wheel] Reconnecting...');
+        const newUrl = msg.payload.session.reconnect_url;
+        ws.onclose = null;
+        ws.close();
+        openEventSubSocket(newUrl);
+      }
+
+      if (type === 'notification') {
+        const evt = msg.payload.event;
+        console.log('[Wheel] Notification event:', JSON.stringify(evt));
+        window._debug('Event: ' + JSON.stringify(evt).slice(0, 120));
+        if (!evt) return;
+        const rewardTitle = (evt.reward?.title || '').toLowerCase().trim();
+        const filter = (cfg.rewardFilter || '').toLowerCase().trim();
+        console.log('[Wheel] rewardTitle:', rewardTitle, 'filter:', filter);
+        window._debug('reward:"' + rewardTitle + '" filter:"' + filter + '"');
+        if (!filter || rewardTitle.includes(filter) || filter.includes(rewardTitle)) {
+          const user = evt.user_name || evt.user_login || 'viewer';
+          console.log('[Wheel] Enqueuing spin for:', user);
+          window._debug('SPIN: ' + user);
+          enqueue(user);
+        } else {
+          console.log('[Wheel] No match, skipping');
+          window._debug('NO MATCH');
+        }
+      }
+    } catch(ex) {
+      console.error('[Wheel] Message error:', ex);
+      window._debug('ERROR: ' + ex.message);
     }
   };
-  ws.onclose=e=>{if(wsIntentionalClose)return;if(e.code===4003){setStatusCfg('Auth error — reconnect Twitch','err');return;}setStatusCfg('Disconnected — reconnecting...','warn');reconnectTimer=setTimeout(connectTwitch,5000);};
-  ws.onerror=()=>setStatusCfg('Connection error','err');
+
+  ws.onerror = e => console.error('[Wheel] WS error:', e);
+  ws.onclose = e => {
+    console.log('[Wheel] WS closed, code:', e.code, 'clean:', e.wasClean);
+    window._debug('WS closed code:' + e.code);
+    // Auto-reconnect after 10s on unexpected close (not code 4003 which means auth failed)
+    if (e.code !== 1000 && e.code !== 4003) setTimeout(() => openEventSubSocket(), 10000);
+  };
 }
 
-function startTwitchAuth(){
-  if(!cfg.clientId){alert('Enter your Client ID first');return;}
-  const redirectUri=window.location.origin+window.location.pathname;
-  const scope='channel:read:redemptions channel:manage:redemptions user:read:email';
-  const url=`https://id.twitch.tv/oauth2/authorize?client_id=${cfg.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}&force_verify=true`;
-  const popup=window.open(url,'twitch-auth','width=500,height=700');
-  let handled=false;
-  function onTokenReceived(token){
-    if(handled)return;handled=true;
-    cfg.oauthToken=token;saveCfg();updateConnectBtn();connectTwitchAndValidate();
-    clearInterval(poll);setStatusCfg('Token received — connecting...','warn');
+async function resolveUserId() {
+  try {
+    // First validate token and log scopes
+    const valRes = await fetch('https://id.twitch.tv/oauth2/validate', {
+      headers: { 'Authorization': 'OAuth ' + cfg.oauthToken }
+    });
+    const valData = await valRes.json();
+    console.log('[Wheel] Token validation:', JSON.stringify(valData));
+    window._debug('Scopes: ' + (valData.scopes||[]).join(', '));
+
+    const channelName = cfg.channel.trim().toLowerCase();
+    if (!channelName) { console.log('[Wheel] No channel set'); return; }
+    console.log('[Wheel] Resolving user ID for:', channelName);
+    window._debug('Resolving: ' + channelName);
+    const res = await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
+      headers: { 'Client-Id': cfg.clientId, 'Authorization': `Bearer ${cfg.oauthToken}` }
+    });
+    const data = await res.json();
+    console.log('[Wheel] Users response:', JSON.stringify(data));
+    window._debug('Users API: ' + JSON.stringify(data).slice(0,80));
+    if (!data.data?.length) { console.log('[Wheel] Channel not found'); return; }
+    twitchUserId = data.data[0].id;
+    console.log('[Wheel] User ID:', twitchUserId);
+    window._debug('UserID: ' + twitchUserId);
+    await subscribeEventSub();
+  } catch(e) {
+    console.error('[Wheel] resolveUserId error:', e);
+    window._debug('resolveUserId ERROR: ' + e.message);
   }
-  const poll=setInterval(()=>{
-    try{
-      if(popup.closed){clearInterval(poll);return;}
-      const hash=popup.location.hash;
-      if(hash&&hash.includes('access_token=')){
-        const token=hash.match(/access_token=([^&]+)/)?.[1];
-        if(token){popup.close();onTokenReceived(token);}
-      }
-    }catch(e){}
-  },300);
 }
 
-async function connectTwitchAndValidate(){
-  if(!cfg.oauthToken)return;
-  try{
-    const res=await fetch('https://id.twitch.tv/oauth2/validate',{headers:{'Authorization':`OAuth ${cfg.oauthToken}`}});
-    const data=await res.json();
-    if(data.login){cfg.channel=data.login;saveCfg();const c=document.getElementById('cfg-channel');if(c)c.value=cfg.channel;}
-  }catch(e){}
-  connectTwitch();
+async function subscribeEventSub() {
+  try {
+    const body = {
+      type: 'channel.channel_points_custom_reward_redemption.add',
+      version: '1',
+      condition: { broadcaster_user_id: twitchUserId },
+      transport: { method: 'websocket', session_id: eventsubSessionId }
+    };
+    console.log('[Wheel] Subscribing EventSub:', JSON.stringify(body));
+    window._debug('Subscribing EventSub...');
+    const res = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+      method: 'POST',
+      headers: {
+        'Client-Id': cfg.clientId,
+        'Authorization': `Bearer ${cfg.oauthToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    console.log('[Wheel] Subscribe response', res.status, JSON.stringify(data));
+    window._debug('Subscribe ' + res.status + ': ' + JSON.stringify(data).slice(0,80));
+  } catch(e) {
+    console.error('[Wheel] subscribeEventSub error:', e);
+    window._debug('Subscribe ERROR: ' + e.message);
+  }
 }
 
-function disconnectTwitch(){
-  cfg.oauthToken='';saveCfg();wsIntentionalClose=true;
-  if(ws){ws.close();ws=null;}clearTimeout(reconnectTimer);
-  updateConnectBtn();setStatusCfg('Disconnected','');
-}
-
-function updateConnectBtn(){
-  const cb=document.getElementById('twitch-connect-btn'),db=document.getElementById('twitch-disconnect-btn');
-  if(!cb)return;
-  if(cfg.oauthToken){cb.textContent='Reconnect Twitch';cb.className='cfg-btn success';db.style.display='';}
-  else{cb.textContent='Connect with Twitch';cb.className='cfg-btn';db.style.display='none';}
-}
-
-// Handle OAuth redirect
-(function checkOAuth(){
-  const hash=window.location.hash;
-  if(hash&&hash.includes('access_token=')){
-    const token=hash.match(/access_token=([^&]+)/)?.[1];
-    if(token){
-      let c={};try{c=JSON.parse(localStorage.getItem('wheelCfg'))||{};}catch(e){}
-      c.oauthToken=token;localStorage.setItem('wheelCfg',JSON.stringify(c));
-      document.body.innerHTML=`<div style="background:#0d1009;color:#e8b84b;font-family:'Orbitron',monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-size:20px;letter-spacing:3px;text-align:center;">✓ TWITCH CONNECTED<br><span style="font-size:12px;color:#c8d4b8;font-family:'Share Tech Mono';margin-top:12px;display:block;">This window will close automatically...</span></div>`;
-      window.history.replaceState({},document.title,window.location.pathname);
-      setTimeout(()=>window.close(),2000);return;
+async function validateToken(token, statusEl) {
+  try {
+    const res = await fetch('https://id.twitch.tv/oauth2/validate', {
+      headers: { 'Authorization': 'OAuth ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      statusEl.textContent = 'Token invalid — reconnect Twitch.';
+      statusEl.style.color = '#e84b4b';
+      return;
     }
+    const scopes = data.scopes || [];
+    const hasScope = scopes.includes('channel:read:redemptions');
+    if (hasScope) {
+      statusEl.textContent = 'Token OK · scopes: ' + scopes.join(', ');
+      statusEl.style.color = '#5dca5d';
+    } else {
+      statusEl.textContent = 'Missing scope! Disconnect and reconnect Twitch.';
+      statusEl.style.color = '#e84b4b';
+    }
+    console.log('[Wheel] Token scopes:', scopes);
+  } catch(e) {
+    statusEl.textContent = 'Could not validate token.';
+  }
+}
+
+function disconnectTwitch() {
+  if (ws) { ws.onclose = null; ws.onerror = null; ws.close(); ws = null; }
+  cfg.oauthToken = '';
+  saveCfg();
+  document.getElementById('cfg-auth-btn').textContent = 'Connect with Twitch';
+  document.getElementById('cfg-auth-btn').style.background = '#9146ff';
+  document.getElementById('cfg-auth-status').textContent = 'Disconnected.';
+  document.getElementById('cfg-disconnect-btn').style.display = 'none';
+  console.log('[Wheel] Disconnected and token cleared');
+}
+
+function setStatus(state, text) {
+  console.log('[Wheel] Status:', state, text);
+}
+
+// ---- Config panel ----
+function openConfig() {
+  const p = document.getElementById('config-panel');
+  p.classList.add('open');
+  document.getElementById('cfg-clientid').value = cfg.clientId || '';
+  document.getElementById('cfg-clientid').value = cfg.clientId || '';
+  document.getElementById('cfg-channel').value = cfg.channel || '';
+  document.getElementById('cfg-reward').value = cfg.rewardFilter || '';
+  const authBtn = document.getElementById('cfg-auth-btn');
+  const authSt = document.getElementById('cfg-auth-status');
+  const discBtn = document.getElementById('cfg-disconnect-btn');
+  if (cfg.oauthToken) {
+    authBtn.textContent = 'Re-connect Twitch'; authBtn.style.background = '#1e9e75';
+    authSt.textContent = 'Checking token...';
+    discBtn.style.display = 'inline-block';
+    validateToken(cfg.oauthToken, authSt);
+  } else {
+    authBtn.textContent = 'Connect with Twitch'; authBtn.style.background = '#9146ff';
+    authSt.textContent = ''; discBtn.style.display = 'none';
+  }
+  document.getElementById('cfg-sound').value = cfg.soundEnabled ? 'on' : 'off';
+  const vol = Math.round((cfg.volume ?? 0.7) * 100);
+  document.getElementById('cfg-volume').value = vol;
+  document.getElementById('cfg-vol-out').textContent = vol + '%';
+  renderCfgItems();
+}
+
+function cfgClose() {
+  document.getElementById('config-panel').classList.remove('open');
+}
+
+function renderCfgItems() {
+  const el = document.getElementById('items-cfg');
+  el.innerHTML = cfg.items.map((it, i) =>
+    `<div class="cfg-item">
+      <input type="color" value="${it.color}" onchange="cfg.items[${i}].color=this.value"/>
+      <input type="text" value="${esc(it.label)}" placeholder="Challenge label" onchange="cfg.items[${i}].label=this.value"/>
+      <input type="number" min="1" max="9" value="${it.weight||1}" title="Weight (1=rare, 9=common)" onchange="cfg.items[${i}].weight=Math.max(1,+this.value||1)"/>
+      <button onclick="cfgDelItem(${i})">Remove</button>
+    </div>`
+  ).join('');
+}
+
+function cfgAddItem() {
+  cfg.items.push({ label: 'New challenge', color: '#1a3a1a', weight: 1 });
+  renderCfgItems();
+}
+
+window.cfgDelItem = i => {
+  cfg.items.splice(i, 1);
+  renderCfgItems();
+};
+
+function cfgSave() {
+  cfg.clientId = document.getElementById('cfg-clientid').value.trim();
+  cfg.channel = document.getElementById('cfg-channel').value.trim().toLowerCase();
+  cfg.rewardFilter = document.getElementById('cfg-reward').value.trim();
+  cfg.soundEnabled = document.getElementById('cfg-sound').value.trim().toLowerCase() !== 'off';
+  cfg.volume = parseInt(document.getElementById('cfg-volume').value) / 100;
+  if (masterGain) masterGain.gain.value = cfg.volume;
+  saveCfg();
+  drawWheel();
+  const s = document.getElementById('cfg-status');
+  s.style.display = 'block';
+  setTimeout(() => { s.style.display = 'none'; cfgClose(); }, 1200);
+}
+
+function cfgReset() {
+  if (!confirm('Reset all items to defaults? This cannot be undone.')) return;
+  localStorage.removeItem('wheelCfg');
+  cfg = Object.assign({}, DEFAULTS, { items: JSON.parse(JSON.stringify(DEFAULTS.items)) });
+  drawWheel();
+  renderCfgItems();
+  document.getElementById('cfg-clientid').value = cfg.clientId || '';
+  document.getElementById('cfg-clientid').value = cfg.clientId || '';
+  document.getElementById('cfg-channel').value = cfg.channel || '';
+  document.getElementById('cfg-reward').value = cfg.rewardFilter || '';
+  const authBtn = document.getElementById('cfg-auth-btn');
+  const authSt = document.getElementById('cfg-auth-status');
+  const discBtn = document.getElementById('cfg-disconnect-btn');
+  if (cfg.oauthToken) {
+    authBtn.textContent = 'Re-connect Twitch'; authBtn.style.background = '#1e9e75';
+    authSt.textContent = 'Checking token...';
+    discBtn.style.display = 'inline-block';
+    validateToken(cfg.oauthToken, authSt);
+  } else {
+    authBtn.textContent = 'Connect with Twitch'; authBtn.style.background = '#9146ff';
+    authSt.textContent = ''; discBtn.style.display = 'none';
+  }
+  document.getElementById('cfg-sound').value = cfg.soundEnabled ? 'on' : 'off';
+  const vol2 = Math.round((cfg.volume ?? 0.7) * 100);
+  document.getElementById('cfg-volume').value = vol2;
+  document.getElementById('cfg-vol-out').textContent = vol2 + '%';
+  if (masterGain) masterGain.gain.value = cfg.volume;
+  const s = document.getElementById('cfg-status');
+  s.textContent = 'Reset to defaults!';
+  s.style.display = 'block';
+  setTimeout(() => { s.style.display = 'none'; s.textContent = 'Saved!'; }, 1500);
+}
+
+function esc(s) { return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// ---- Init ----
+// Debug overlay — only shown with ?debug=1 in URL
+if (new URLSearchParams(window.location.search).get('debug') === '1') {
+  const dbg = document.createElement('div');
+  dbg.id = 'debug-overlay';
+  dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.85);color:#e8b84b;font-family:monospace;font-size:11px;padding:8px;z-index:9999;max-height:200px;overflow-y:auto;white-space:pre-wrap;';
+  dbg.textContent = 'Debug mode on. Waiting for events...';
+  document.body.appendChild(dbg);
+  window._debug = (msg) => {
+    dbg.textContent = new Date().toLocaleTimeString() + ' ' + msg + '\n' + dbg.textContent;
+  };
+  window._debug('Token: ' + (cfg.oauthToken ? 'SET' : 'NOT SET'));
+  window._debug('ClientID: ' + (cfg.clientId ? cfg.clientId.slice(0,8)+'...' : 'NOT SET'));
+  window._debug('Channel: ' + (cfg.channel || 'NOT SET'));
+  window._debug('Reward filter: ' + (cfg.rewardFilter || '(any)'));
+} else {
+  window._debug = () => {};
+}
+
+// Handle OAuth redirect — if we landed here with a token in the hash, save it and close
+(function handleOAuthRedirect() {
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    const token = new URLSearchParams(hash.replace('#', '?')).get('access_token');
+    if (token) {
+      // Load existing config, save token, then show success and close
+      const existing = JSON.parse(localStorage.getItem('wheelCfg') || '{}');
+      existing.oauthToken = token;
+      localStorage.setItem('wheelCfg', JSON.stringify(existing));
+      document.body.style.background = '#0a0c0a';
+      document.body.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:'Barlow Condensed',sans-serif;color:#e8b84b;text-align:center;gap:16px;">
+          <div style="font-size:48px;">✓</div>
+          <div style="font-size:22px;font-weight:700;letter-spacing:2px;">TWITCH CONNECTED</div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.5);">You can close this window.</div>
+        </div>`;
+      setTimeout(() => window.close(), 2000);
+    }
+    return;
   }
 })();
 
-function openConfig(){
-  cfg=loadCfg();
-  document.getElementById('config-overlay').classList.add('open');
-  document.getElementById('cfg-clientid').value=cfg.clientId||'';
-  document.getElementById('cfg-channel').value=cfg.channel||'';
-  document.getElementById('cfg-reward').value=cfg.rewardFilter||'';
-  document.getElementById('cfg-sound').checked=cfg.soundEnabled!==false;
-  document.getElementById('cfg-volume').value=cfg.volume??70;
-  document.getElementById('cfg-volume-val').textContent=(cfg.volume??70)+'%';
-  updateConnectBtn();renderItems();
+drawWheel();
+if (cfg.channel) connectTwitch();
+
+// Open config if ?config=1 in URL
+if (new URLSearchParams(window.location.search).get('config') === '1') {
+  openConfig();
 }
 
-function renderItems(){
-  const list=document.getElementById('cfg-items-list');list.innerHTML='';
-  cfg.items.forEach((item,i)=>{
-    const row=document.createElement('div');row.className='cfg-item-row';
-    row.innerHTML=`<input type="color" class="cfg-item-color" value="${item.color}" data-idx="${i}"><input type="text" class="cfg-item-name" value="${item.label}" placeholder="Challenge name" data-idx="${i}"><input type="number" class="cfg-item-weight" value="${item.weight}" min="1" max="9" data-idx="${i}" title="Weight"><button class="cfg-item-del" data-idx="${i}">×</button>`;
-    list.appendChild(row);
+// ---- Drag to move ----
+function makeDraggable(el) {
+  let startX, startY, origX, origY;
+  el.addEventListener('mousedown', e => {
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    startX = e.clientX; startY = e.clientY;
+    origX = parseInt(el.style.left) || 0;
+    origY = parseInt(el.style.top) || 0;
+    el.classList.add('dragging');
+    function onMove(e) {
+      el.style.left = (origX + e.clientX - startX) + 'px';
+      el.style.top  = (origY + e.clientY - startY) + 'px';
+    }
+    function onUp() {
+      el.classList.remove('dragging');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
   });
-  list.querySelectorAll('.cfg-item-color').forEach(el=>el.addEventListener('input',e=>{cfg.items[+e.target.dataset.idx].color=e.target.value;drawWheel(currentAngle);}));
-  list.querySelectorAll('.cfg-item-name').forEach(el=>el.addEventListener('input',e=>{cfg.items[+e.target.dataset.idx].label=e.target.value;drawWheel(currentAngle);}));
-  list.querySelectorAll('.cfg-item-weight').forEach(el=>el.addEventListener('input',e=>{cfg.items[+e.target.dataset.idx].weight=Math.max(1,Math.min(9,+e.target.value||1));drawWheel(currentAngle);}));
-  list.querySelectorAll('.cfg-item-del').forEach(el=>el.addEventListener('click',e=>{cfg.items.splice(+e.target.dataset.idx,1);renderItems();drawWheel(currentAngle);}));
 }
+makeDraggable(document.getElementById('wheel-container'));
+makeDraggable(document.getElementById('result-overlay'));
 
-document.getElementById('cfg-volume').addEventListener('input',e=>{document.getElementById('cfg-volume-val').textContent=e.target.value+'%';});
-document.getElementById('cfg-add-item').addEventListener('click',()=>{cfg.items.push({label:'New challenge',color:'#3a4a2a',weight:1});renderItems();});
-document.getElementById('cfg-reset-defaults').addEventListener('click',()=>{if(!confirm('Reset all challenges to defaults?'))return;cfg.items=DEFAULTS.items.map(i=>({...i}));localStorage.removeItem('wheelCfg');renderItems();drawWheel(currentAngle);});
-document.getElementById('twitch-connect-btn').addEventListener('click',startTwitchAuth);
-document.getElementById('twitch-disconnect-btn').addEventListener('click',disconnectTwitch);
-document.getElementById('cfg-save-btn').addEventListener('click',()=>{
-  cfg.clientId=document.getElementById('cfg-clientid').value.trim();
-  cfg.channel=document.getElementById('cfg-channel').value.trim().toLowerCase();
-  cfg.rewardFilter=document.getElementById('cfg-reward').value.trim();
-  cfg.soundEnabled=document.getElementById('cfg-sound').checked;
-  cfg.volume=parseInt(document.getElementById('cfg-volume').value);
-  if(masterGain)masterGain.gain.value=cfg.volume/100;
-  saveCfg();document.getElementById('config-overlay').classList.remove('open');
-  drawWheel(currentAngle);connectTwitch();
+// Keyboard shortcut: press S to spin manually (useful when testing)
+document.addEventListener('keydown', e => {
+  const configOpen = document.getElementById('config-panel').classList.contains('open');
+  const typing = ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName) || e.target.isContentEditable;
+  if (configOpen || typing) return;
+  if (e.key === 's' || e.key === 'S') { e.preventDefault(); manualSpin(); }
+  if (e.key === 'Escape') closeResult();
+  if (e.key === 'c' || e.key === 'C') { e.preventDefault(); openConfig(); }
 });
-document.getElementById('cfg-cancel-btn').addEventListener('click',()=>{cfg=loadCfg();document.getElementById('config-overlay').classList.remove('open');drawWheel(currentAngle);});
-
-const params=new URLSearchParams(window.location.search);
-if(params.get('config')==='1')openConfig();
-
-// Pre-render canvas (even while hidden, so it's ready when shown)
-drawWheel(currentAngle);
-if(cfg.clientId&&cfg.oauthToken)connectTwitchAndValidate();
 </script>
 </body>
 </html>
